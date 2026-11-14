@@ -66,7 +66,7 @@
   --color-warning-soft: var(--warning-soft);
   --color-destructive-soft: var(--destructive-soft);
   --color-neutral-soft: var(--neutral-soft);
-  --font-sans: var(--font-onest);
+  --font-sans: var(--font-body);
   --font-heading: var(--font-gabarito);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);

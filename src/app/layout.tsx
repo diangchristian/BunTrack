@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Gabarito, Onest } from "next/font/google";
+import { Gabarito, IBM_Plex_Sans } from "next/font/google";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
-const fontSans = Onest({ variable: "--font-onest", subsets: ["latin"] });
+const fontSans = IBM_Plex_Sans({ variable: "--font-body", subsets: ["latin"] });
 const fontHeading = Gabarito({ variable: "--font-gabarito", subsets: ["latin"] });
 
 export const metadata: Metadata = {
