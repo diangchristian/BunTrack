@@ -13,7 +13,7 @@ import {
   QuickActions,
   UnavailableProducts,
 } from "@/features/dashboard/components/side-panels";
-import { StatCard } from "@/features/dashboard/components/stat-card";
+import { StatCard } from "@/components/stat-card";
 import { getDashboardData } from "@/features/dashboard/queries";
 import { formatPeso } from "@/lib/format";
 import { cn } from "@/lib/utils";

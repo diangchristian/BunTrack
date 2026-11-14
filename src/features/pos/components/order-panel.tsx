@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatCentavos } from "@/lib/format";
 import { orderTotals } from "../pricing";
 import type { MenuProduct } from "../types";
-import { ProductImage } from "./product-image";
+import { ProductImage } from "@/features/products/components/product-image";
 
 export type OrderLine = { product: MenuProduct; quantity: number };
 

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { formatCentavos } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { categories, type CategoryId, type MenuProduct } from "../types";
-import { ProductImage } from "./product-image";
+import { ProductImage } from "@/features/products/components/product-image";
 
 export function ProductGrid({
   menu,

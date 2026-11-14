@@ -2,7 +2,7 @@ import Image from "next/image";
 import { CupSoda, Hamburger, IceCreamCone, UtensilsCrossed, type LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { CategoryId, MenuProduct } from "../types";
+import type { CategoryId, Product } from "../types";
 
 const categoryIcons: Record<CategoryId, LucideIcon> = {
   burgers: Hamburger,
@@ -18,7 +18,7 @@ export function ProductImage({
   sizes,
   className,
 }: {
-  product: Pick<MenuProduct, "name" | "category" | "image" | "available">;
+  product: Pick<Product, "name" | "category" | "image" | "available">;
   sizes: string;
   className?: string;
 }) {
