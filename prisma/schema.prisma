@@ -1,0 +1,12 @@
+// Prisma schema: https://pris.ly/d/prisma-schema
+// Models are added per feature. There are none yet.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// The connection URL (DATABASE_URL) is set in prisma7.config.ts (Prisma 7).
+datasource db {
+  provider = "postgresql"
+}

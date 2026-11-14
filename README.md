@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BunTrack
 
-## Getting Started
+Burger shop management system built with Next.js (App Router), TypeScript,
+Tailwind CSS, shadcn/ui (Base UI), PostgreSQL and Prisma.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js 20.9 or later
+- npm
+- A PostgreSQL database
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install                 # also runs prisma generate
+cp .env.example .env        # then set DATABASE_URL
+npm run db:migrate          # apply migrations
+npm run dev                 # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Script | What it does |
+| --- | --- |
+| `npm run dev` | Start the dev server |
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build |
+| `npm run lint` | Run ESLint |
+| `npm test` | Run `*.test.ts` files with Node's test runner (via tsx) |
+| `npm run db:generate` | Generate the Prisma client |
+| `npm run db:migrate` | Create and apply migrations (`prisma migrate dev`) |
+| `npm run db:studio` | Open Prisma Studio |
+| `npm run db:seed` | Run `prisma/seed.ts` |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project structure
 
-## Learn More
+```
+prisma/              schema.prisma (no models yet) and seed.ts
+prisma7.config.ts    Prisma 7 config: schema path, migrations, DATABASE_URL
+src/app/             Routing and composition only
+  login/             Sign-in page
+  (app)/             Signed-in shell (sidebar + top bar); dashboard/
+src/features/        One folder per feature, see src/features/README.md
+src/components/ui/   shadcn components (add more with `npx shadcn@latest add <name>`)
+src/components/layout/  App sidebar, top bar, logo
+src/hooks/           Shared client-side hooks
+src/lib/             db.ts (Prisma client), env.ts (validated env), utils.ts (cn), format.ts (₱)
+src/proxy.ts         Pass-through request proxy (Next.js 16 replacement for middleware)
+src/generated/prisma Generated Prisma client (gitignored)
+```
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Feature conventions: [src/features/README.md](src/features/README.md).
