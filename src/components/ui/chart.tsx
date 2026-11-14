@@ -72,6 +72,8 @@ function ChartContainer({
         <ChartStyle id={chartId} config={config} />
         <RechartsPrimitive.ResponsiveContainer
           initialDimension={initialDimension}
+          // Redraw once after the sidebar's 200ms width animation, not on every frame.
+          debounce={200}
         >
           {children}
         </RechartsPrimitive.ResponsiveContainer>
