@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import { Gabarito, IBM_Plex_Sans } from "next/font/google";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 import "./globals.css";
 
-const fontSans = IBM_Plex_Sans({ variable: "--font-body", subsets: ["latin"] });
-const fontHeading = Gabarito({ variable: "--font-gabarito", subsets: ["latin"] });
+// Only the families the app uses; add more with "&family=Name:wght@..."
+const GOOGLE_FONTS =
+  "https://fonts.googleapis.com/css2?family=Gabarito:wght@400..900&family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&display=swap";
 
 export const metadata: Metadata = {
   title: {
@@ -18,7 +17,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={cn("h-full antialiased font-sans", fontSans.variable, fontHeading.variable)}>
+    <html lang="en" className="h-full antialiased font-sans">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="stylesheet" href={GOOGLE_FONTS} />
+      </head>
       <body className="flex min-h-full flex-col">
         <TooltipProvider>{children}</TooltipProvider>
       </body>
