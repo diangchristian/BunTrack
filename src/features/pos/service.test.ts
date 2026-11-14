@@ -10,7 +10,7 @@ const menu: MenuProduct[] = [
   { id: "rings", name: "Onion Rings", category: "sides", price: 8900, available: false },
 ];
 
-const base = { orderType: "dine-in", method: "cash" } as const;
+const base = { method: "cash" } as const;
 
 test("prices the order from the server menu and computes change", () => {
   const result = checkoutOrder(menu, {
@@ -48,7 +48,6 @@ test("rejects cash that does not cover the total", () => {
 
 test("GCash is charged the exact total with no change", () => {
   const result = checkoutOrder(menu, {
-    orderType: "takeout",
     method: "gcash",
     amountReceived: 0,
     lines: [{ productId: "tea", quantity: 1 }],

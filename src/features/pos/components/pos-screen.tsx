@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import type { MenuProduct, OrderType, Receipt } from "../types";
+import type { MenuProduct, Receipt } from "../types";
 import { OrderPanel, type OrderLine } from "./order-panel";
 import { PaymentDialog } from "./payment-dialog";
 import { ProductGrid } from "./product-grid";
@@ -11,7 +11,6 @@ import { ReceiptDialog } from "./receipt-dialog";
 export function PosScreen({ menu, cashierName }: { menu: MenuProduct[]; cashierName: string }) {
   // productId -> quantity, in the order items were first added
   const [quantities, setQuantities] = useState(new Map<string, number>());
-  const [orderType, setOrderType] = useState<OrderType>("dine-in");
   const [paying, setPaying] = useState(false);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
 
@@ -48,15 +47,13 @@ export function PosScreen({ menu, cashierName }: { menu: MenuProduct[]; cashierN
       <div className="flex min-h-0 flex-col border-t lg:border-t-0 lg:border-l">
         <OrderPanel
           lines={lines}
-          orderType={orderType}
-          onOrderTypeChange={setOrderType}
           onQuantityChange={setQuantity}
           onClear={() => setQuantities(new Map())}
           onCharge={() => setPaying(true)}
         />
       </div>
 
-      <PaymentDialog open={paying} onOpenChange={setPaying} lines={lines} orderType={orderType} onPaid={handlePaid} />
+      <PaymentDialog open={paying} onOpenChange={setPaying} lines={lines} onPaid={handlePaid} />
       <ReceiptDialog receipt={receipt} onNewOrder={() => setReceipt(null)} />
     </div>
   );

@@ -31,7 +31,6 @@ export function RecentTransactions({ rows }: { rows: DashboardData["recentTransa
             <TableRow>
               <TableHead className="w-20 text-xs">Order</TableHead>
               <TableHead className="w-20 text-xs">Time</TableHead>
-              <TableHead className="hidden w-20 text-xs md:table-cell">Type</TableHead>
               <TableHead className="hidden text-xs sm:table-cell">Items</TableHead>
               <TableHead className="hidden w-20 text-xs md:table-cell">Payment</TableHead>
               <TableHead className="w-24 text-right text-xs">Total</TableHead>
@@ -45,7 +44,6 @@ export function RecentTransactions({ rows }: { rows: DashboardData["recentTransa
                 <TableRow key={tx.id}>
                   <TableCell className="font-semibold">{tx.id}</TableCell>
                   <TableCell className="text-muted-foreground">{tx.time}</TableCell>
-                  <TableCell className="hidden md:table-cell">{tx.type}</TableCell>
                   <TableCell className="hidden truncate sm:table-cell" title={tx.items}>
                     {tx.items}
                   </TableCell>

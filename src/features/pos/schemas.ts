@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 export const checkoutSchema = z.object({
-  orderType: z.enum(["dine-in", "takeout"]),
   method: z.enum(["cash", "gcash"]),
   /** Centavos handed over by the customer. Ignored for GCash. */
   amountReceived: z.int().min(0).max(10_000_000),

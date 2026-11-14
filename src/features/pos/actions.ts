@@ -29,7 +29,6 @@ export async function completeOrder(input: unknown): Promise<{ ok: true; receipt
       ...result.order,
       orderNumber: `#${nextOrderNumber++}`,
       completedAt: new Date().toISOString(),
-      orderType: parsed.data.orderType,
       method: parsed.data.method,
     },
   };

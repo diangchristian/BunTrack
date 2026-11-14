@@ -20,13 +20,11 @@ export type MenuProduct = {
   unavailableReason?: string;
 };
 
-export type OrderType = "dine-in" | "takeout";
 export type PaymentMethod = "cash" | "gcash";
 
 export type Receipt = {
   orderNumber: string;
   completedAt: string;
-  orderType: OrderType;
   method: PaymentMethod;
   lines: { productId: string; name: string; quantity: number; lineTotal: number }[];
   total: number;

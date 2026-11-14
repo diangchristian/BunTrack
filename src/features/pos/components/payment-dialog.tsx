@@ -11,7 +11,7 @@ import { formatCentavos } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { completeOrder } from "../actions";
 import { changeDue, orderTotals, quickCashOptions } from "../pricing";
-import type { OrderType, PaymentMethod, Receipt } from "../types";
+import type { PaymentMethod, Receipt } from "../types";
 import type { OrderLine } from "./order-panel";
 
 const methods = [
@@ -23,20 +23,18 @@ export function PaymentDialog({
   open,
   onOpenChange,
   lines,
-  orderType,
   onPaid,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   lines: OrderLine[];
-  orderType: OrderType;
   onPaid: (receipt: Receipt) => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         {/* Mounted only while open, so each payment starts with a fresh form. */}
-        <PaymentForm lines={lines} orderType={orderType} onPaid={onPaid} onBack={() => onOpenChange(false)} />
+        <PaymentForm lines={lines} onPaid={onPaid} onBack={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
   );
@@ -44,12 +42,10 @@ export function PaymentDialog({
 
 function PaymentForm({
   lines,
-  orderType,
   onPaid,
   onBack,
 }: {
   lines: OrderLine[];
-  orderType: OrderType;
   onPaid: (receipt: Receipt) => void;
   onBack: () => void;
 }) {
@@ -66,7 +62,6 @@ function PaymentForm({
     setError(undefined);
     startTransition(async () => {
       const result = await completeOrder({
-        orderType,
         method,
         amountReceived: method === "cash" ? received : 0,
         lines: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity })),
@@ -81,7 +76,7 @@ function PaymentForm({
       <DialogHeader>
         <DialogTitle className="text-lg font-bold">Collect Payment</DialogTitle>
         <DialogDescription>
-          {orderType === "dine-in" ? "Dine-in" : "Takeout"} · {itemCount} {itemCount === 1 ? "item" : "items"}
+          {itemCount} {itemCount === 1 ? "item" : "items"}
         </DialogDescription>
       </DialogHeader>
 

@@ -35,7 +35,7 @@ export function ReceiptDialog({ receipt, onNewOrder }: { receipt: Receipt | null
                     timeStyle: "short",
                     timeZone: "Asia/Manila",
                   })}{" "}
-                  · {receipt.orderNumber} · {receipt.orderType === "dine-in" ? "Dine-in" : "Takeout"}
+                  · {receipt.orderNumber}
                 </p>
               </div>
               <ul className="flex flex-col gap-1.5">

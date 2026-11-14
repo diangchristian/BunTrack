@@ -4,24 +4,19 @@ import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { formatCentavos } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import { orderTotals } from "../pricing";
-import type { MenuProduct, OrderType } from "../types";
+import type { MenuProduct } from "../types";
 import { ProductImage } from "./product-image";
 
 export type OrderLine = { product: MenuProduct; quantity: number };
 
 export function OrderPanel({
   lines,
-  orderType,
-  onOrderTypeChange,
   onQuantityChange,
   onClear,
   onCharge,
 }: {
   lines: OrderLine[];
-  orderType: OrderType;
-  onOrderTypeChange: (type: OrderType) => void;
   onQuantityChange: (productId: string, quantity: number) => void;
   onClear: () => void;
   onCharge: () => void;
@@ -41,22 +36,6 @@ export function OrderPanel({
           <Button variant="ghost" onClick={onClear} disabled={lines.length === 0}>
             <Trash2 data-icon="inline-start" /> Clear
           </Button>
-        </div>
-        <div className="grid grid-cols-2 gap-1 rounded-[10px] border bg-secondary p-1" role="group" aria-label="Order type">
-          {(["dine-in", "takeout"] as const).map((type) => (
-            <button
-              key={type}
-              type="button"
-              aria-pressed={orderType === type}
-              onClick={() => onOrderTypeChange(type)}
-              className={cn(
-                "h-8 rounded-md text-sm font-medium text-muted-foreground",
-                orderType === type && "bg-background font-semibold text-foreground shadow-sm",
-              )}
-            >
-              {type === "dine-in" ? "Dine-in" : "Takeout"}
-            </button>
-          ))}
         </div>
       </div>
 
