@@ -1,11 +1,10 @@
 // Pure money math shared by the POS screen (preview) and the server action (source of truth).
-// Amounts are integer centavos. Menu prices already include 12% VAT.
+// Amounts are integer centavos. No VAT is added or shown (owner request, 2026-11-15).
 
 export function orderTotals(lines: { unitPrice: number; quantity: number }[]) {
   const total = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
   const itemCount = lines.reduce((sum, line) => sum + line.quantity, 0);
-  // VAT-inclusive: the VAT portion of a price P is P × 12/112.
-  return { itemCount, total, vat: Math.round((total * 12) / 112) };
+  return { itemCount, total };
 }
 
 export function changeDue(total: number, received: number) {

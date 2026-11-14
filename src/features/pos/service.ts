@@ -8,7 +8,6 @@ type CheckoutResult =
       order: {
         lines: { productId: string; name: string; quantity: number; lineTotal: number }[];
         total: number;
-        vat: number;
         received: number;
         change: number;
       };
@@ -33,7 +32,7 @@ export function checkoutOrder(menu: MenuProduct[], input: CheckoutInput): Checko
     lines.push({ productId, name: product.name, quantity, unitPrice: product.price });
   }
 
-  const { total, vat } = orderTotals(lines);
+  const { total } = orderTotals(lines);
   const received = input.method === "cash" ? input.amountReceived : total;
   if (received < total) return { ok: false, error: "Cash received is less than the total." };
 
@@ -42,7 +41,6 @@ export function checkoutOrder(menu: MenuProduct[], input: CheckoutInput): Checko
     order: {
       lines: lines.map(({ unitPrice, ...line }) => ({ ...line, lineTotal: unitPrice * line.quantity })),
       total,
-      vat,
       received,
       change: changeDue(total, received),
     },

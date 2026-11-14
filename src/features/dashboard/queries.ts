@@ -51,7 +51,7 @@ export async function getDashboardData() {
       { id: "#1042", time: "12:41 PM", type: "Dine-in", items: "2× Classic Cheeseburger, 1× Iced Tea", payment: "Cash", total: 367, status: "completed" },
       { id: "#1041", time: "12:36 PM", type: "Takeout", items: "1× Double Cheeseburger, 1× Fries", payment: "GCash", total: 298, status: "completed" },
       { id: "#1040", time: "12:30 PM", type: "Dine-in", items: "1× Bacon Burger Combo", payment: "Cash", total: 259, status: "voided" },
-      { id: "#1039", time: "12:22 PM", type: "Takeout", items: "3× Chicken Burger, 3× Soft Drinks", payment: "Card", total: 657, status: "completed" },
+      { id: "#1039", time: "12:22 PM", type: "Takeout", items: "3× Chicken Burger, 3× Soft Drinks", payment: "GCash", total: 657, status: "completed" },
       { id: "#1038", time: "12:15 PM", type: "Dine-in", items: "1× Classic Cheeseburger", payment: "Cash", total: 149, status: "completed" },
       { id: "#1037", time: "12:09 PM", type: "Takeout", items: "2× French Fries, 2× Iced Tea", payment: "GCash", total: 296, status: "cancelled" },
     ] as const,

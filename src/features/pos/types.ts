@@ -12,7 +12,7 @@ export type MenuProduct = {
   id: string;
   name: string;
   category: CategoryId;
-  /** Centavos, VAT included. */
+  /** Centavos. */
   price: number;
   /** Path under /public, e.g. "/products/classic-cheeseburger.jpg". Falls back to a category icon. */
   image?: string;
@@ -21,7 +21,7 @@ export type MenuProduct = {
 };
 
 export type OrderType = "dine-in" | "takeout";
-export type PaymentMethod = "cash" | "gcash" | "card";
+export type PaymentMethod = "cash" | "gcash";
 
 export type Receipt = {
   orderNumber: string;
@@ -30,7 +30,6 @@ export type Receipt = {
   method: PaymentMethod;
   lines: { productId: string; name: string; quantity: number; lineTotal: number }[];
   total: number;
-  vat: number;
   received: number;
   change: number;
 };

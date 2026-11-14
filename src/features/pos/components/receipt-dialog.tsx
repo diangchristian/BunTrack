@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { formatCentavos } from "@/lib/format";
 import type { Receipt } from "../types";
 
-const methodLabels = { cash: "Cash", gcash: "GCash", card: "Card" };
+const methodLabels = { cash: "Cash", gcash: "GCash" };
 
 export function ReceiptDialog({ receipt, onNewOrder }: { receipt: Receipt | null; onNewOrder: () => void }) {
   return (
@@ -52,10 +52,6 @@ export function ReceiptDialog({ receipt, onNewOrder }: { receipt: Receipt | null
                 <p className="flex justify-between text-sm font-semibold">
                   <span>Total</span>
                   <span className="tabular-nums">{formatCentavos(receipt.total)}</span>
-                </p>
-                <p className="flex justify-between text-muted-foreground">
-                  <span>VAT included (12%)</span>
-                  <span className="tabular-nums">{formatCentavos(receipt.vat)}</span>
                 </p>
                 <p className="flex justify-between">
                   <span>{methodLabels[receipt.method]}</span>

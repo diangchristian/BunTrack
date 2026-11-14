@@ -26,7 +26,7 @@ export function OrderPanel({
   onClear: () => void;
   onCharge: () => void;
 }) {
-  const { itemCount, total, vat } = orderTotals(lines.map((l) => ({ unitPrice: l.product.price, quantity: l.quantity })));
+  const { itemCount, total } = orderTotals(lines.map((l) => ({ unitPrice: l.product.price, quantity: l.quantity })));
 
   return (
     <section aria-label="Current order" className="flex min-h-0 flex-col bg-card">
@@ -118,11 +118,7 @@ export function OrderPanel({
       </div>
 
       <div className="flex flex-col gap-2.5 border-t bg-secondary p-5">
-        <p className="flex justify-between text-sm">
-          <span className="text-muted-foreground">VAT (incl. 12%)</span>
-          <span className="tabular-nums text-muted-foreground">{formatCentavos(vat)}</span>
-        </p>
-        <p className="flex items-baseline justify-between border-t pt-2.5">
+        <p className="flex items-baseline justify-between">
           <span className="font-heading text-[15px] font-semibold">Total</span>
           <span className="text-[28px] leading-9 font-bold tabular-nums">{formatCentavos(total)}</span>
         </p>

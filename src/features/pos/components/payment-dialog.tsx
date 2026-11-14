@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Banknote, CreditCard, Smartphone } from "lucide-react";
+import { Banknote, Smartphone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,7 +17,6 @@ import type { OrderLine } from "./order-panel";
 const methods = [
   { id: "cash", label: "Cash", icon: Banknote },
   { id: "gcash", label: "GCash", icon: Smartphone },
-  { id: "card", label: "Card", icon: CreditCard },
 ] as const;
 
 export function PaymentDialog({
@@ -95,7 +94,7 @@ function PaymentForm({
         <span className="text-xs font-semibold text-muted-foreground" id="method-label">
           Payment Method
         </span>
-        <div className="grid grid-cols-3 gap-2" role="group" aria-labelledby="method-label">
+        <div className="grid grid-cols-2 gap-2" role="group" aria-labelledby="method-label">
           {methods.map(({ id, label, icon: Icon }) => (
             <button
               key={id}

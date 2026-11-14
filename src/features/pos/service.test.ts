@@ -46,7 +46,7 @@ test("rejects cash that does not cover the total", () => {
   assert.equal(result.ok, false);
 });
 
-test("GCash and card are charged the exact total with no change", () => {
+test("GCash is charged the exact total with no change", () => {
   const result = checkoutOrder(menu, {
     orderType: "takeout",
     method: "gcash",

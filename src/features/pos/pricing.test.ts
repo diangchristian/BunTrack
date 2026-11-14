@@ -5,17 +5,17 @@ import { changeDue, orderTotals, quickCashOptions } from "./pricing";
 
 // All amounts are in centavos (₱1 = 100) so no floating-point rounding creeps in.
 
-test("totals for the Figma sample order: ₱555 with ₱59.46 VAT included", () => {
+test("totals for the Figma sample order: 5 items, ₱555", () => {
   const totals = orderTotals([
     { unitPrice: 16900, quantity: 2 }, // 2× ₱169
     { unitPrice: 9900, quantity: 1 },
     { unitPrice: 5900, quantity: 2 },
   ]);
-  assert.deepEqual(totals, { itemCount: 5, total: 55500, vat: 5946 });
+  assert.deepEqual(totals, { itemCount: 5, total: 55500 });
 });
 
 test("an empty order totals zero", () => {
-  assert.deepEqual(orderTotals([]), { itemCount: 0, total: 0, vat: 0 });
+  assert.deepEqual(orderTotals([]), { itemCount: 0, total: 0 });
 });
 
 test("change is what is left after the total, never negative", () => {
