@@ -85,7 +85,7 @@ export function AppSidebar({ user }: { user: { name: string; role: string } }) {
             <SidebarGroupLabel className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
               {group.label}
             </SidebarGroupLabel>
-            <SidebarMenu>
+            <SidebarMenu className="gap-1">
               {group.items.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
