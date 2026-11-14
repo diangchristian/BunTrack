@@ -67,8 +67,8 @@
   --color-destructive-soft: var(--destructive-soft);
   --color-neutral-soft: var(--neutral-soft);
   /* Loaded from Google Fonts by the <link> in src/app/layout.tsx */
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-heading: "Gabarito", "IBM Plex Sans", ui-sans-serif, sans-serif;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Gabarito", "Poppins", ui-sans-serif, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

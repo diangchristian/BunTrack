@@ -5,7 +5,7 @@ import "./globals.css";
 
 // Only the families the app uses; add more with "&family=Name:wght@..."
 const GOOGLE_FONTS =
-  "https://fonts.googleapis.com/css2?family=Gabarito:wght@400..900&family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&display=swap";
+  "https://fonts.googleapis.com/css2?family=Gabarito:wght@400..900&family=Poppins:wght@400;500;600;700&display=swap";
 
 export const metadata: Metadata = {
   title: {
