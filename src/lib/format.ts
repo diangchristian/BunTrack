@@ -5,3 +5,8 @@ const pesosWithCents = new Intl.NumberFormat("en-PH", { style: "currency", curre
 export function formatPeso(amount: number, { cents = false } = {}) {
   return (cents ? pesosWithCents : wholePesos).format(amount);
 }
+
+/** Money stored as integer centavos (₱1 = 100), shown as ₱149.00. */
+export function formatCentavos(centavos: number) {
+  return pesosWithCents.format(centavos / 100);
+}

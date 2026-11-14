@@ -36,7 +36,7 @@ export default async function DashboardPage() {
   const outOfStock = data.lowStock.filter((item) => item.outOfStock).length;
 
   return (
-    <main className="flex flex-col gap-6 p-4 md:p-8">
+    <div className="flex flex-col gap-6 p-4 md:p-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-[22px] leading-[30px] font-bold">Welcome back, {user.firstName}</h1>
@@ -112,6 +112,6 @@ export default async function DashboardPage() {
           <QuickActions />
         </div>
       </div>
-    </main>
+    </div>
   );
 }

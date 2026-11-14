@@ -1,0 +1,14 @@
+import { z } from "zod";
+
+export const checkoutSchema = z.object({
+  orderType: z.enum(["dine-in", "takeout"]),
+  method: z.enum(["cash", "gcash", "card"]),
+  /** Centavos handed over by the customer. Ignored for GCash and card. */
+  amountReceived: z.int().min(0).max(10_000_000),
+  lines: z
+    .array(z.object({ productId: z.string().min(1), quantity: z.int().min(1).max(99) }))
+    .min(1, { error: "Add at least one item" })
+    .max(50),
+});
+
+export type CheckoutInput = z.infer<typeof checkoutSchema>;
