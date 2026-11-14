@@ -28,6 +28,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarRail,
 } from "@/components/ui/sidebar";
 
 const navGroups = [
@@ -73,8 +74,8 @@ export function AppSidebar({ user }: { user: { name: string; role: string } }) {
     .slice(0, 2);
 
   return (
-    <Sidebar>
-      <SidebarHeader className="px-6 pt-6 pb-2">
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="px-6 pt-6 pb-2 transition-[padding] group-data-[collapsible=icon]:px-4">
         <Logo />
       </SidebarHeader>
 
@@ -90,7 +91,8 @@ export function AppSidebar({ user }: { user: { name: string; role: string } }) {
                   <SidebarMenuButton
                     render={<Link href={item.href} />}
                     isActive={pathname.startsWith(item.href)}
-                    className="h-10 gap-3 px-3 font-medium data-active:font-semibold [&_svg]:size-5"
+                    tooltip={item.title}
+                    className="h-10 gap-3 px-3 font-medium data-active:font-semibold group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:p-2.5! [&_svg]:size-5"
                   >
                     <item.icon aria-hidden />
                     <span>{item.title}</span>
@@ -103,11 +105,14 @@ export function AppSidebar({ user }: { user: { name: string; role: string } }) {
       </SidebarContent>
 
       <SidebarFooter className="p-4">
-        <div className="flex items-center gap-3 rounded-xl border bg-secondary p-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-success-strong text-xs font-semibold text-white">
+        <div className="flex items-center gap-3 rounded-xl border bg-secondary p-3 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-2 group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:p-0">
+          <span
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-success-strong text-xs font-semibold text-white"
+            title={`${user.name} · ${user.role}`}
+          >
             {initials}
           </span>
-          <div className="min-w-0 flex-1 leading-tight">
+          <div className="min-w-0 flex-1 leading-tight group-data-[collapsible=icon]:hidden">
             <p className="truncate text-sm font-semibold text-foreground">{user.name}</p>
             <p className="truncate text-xs text-muted-foreground">{user.role}</p>
           </div>
@@ -120,6 +125,7 @@ export function AppSidebar({ user }: { user: { name: string; role: string } }) {
           </Link>
         </div>
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   );
 }
