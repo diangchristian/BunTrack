@@ -1,10 +1,11 @@
 import Image from "next/image";
-import { CupSoda, Hamburger, IceCreamCone, UtensilsCrossed, type LucideIcon } from "lucide-react";
+import { CupSoda, Hamburger, IceCreamCone, Package, UtensilsCrossed, type LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { CategoryId, Product } from "../types";
 
-const categoryIcons: Record<CategoryId, LucideIcon> = {
+/** Placeholder icons for the built-in categories; categories added in Settings get a generic one. */
+const categoryIcons: Partial<Record<CategoryId, LucideIcon>> = {
   burgers: Hamburger,
   combos: Hamburger,
   sides: UtensilsCrossed,
@@ -22,7 +23,7 @@ export function ProductImage({
   sizes: string;
   className?: string;
 }) {
-  const Icon = categoryIcons[product.category];
+  const Icon = categoryIcons[product.category] ?? Package;
   return (
     <div
       className={cn(

@@ -1,3 +1,4 @@
+import { ICE_CREAM } from "@/features/categories/types";
 import type { CategoryId } from "@/features/products/types";
 
 export type Business = "burger" | "iceCream";
@@ -11,7 +12,7 @@ export const businesses = [
 export type BusinessFilter = (typeof businesses)[number]["id"];
 
 /** Dan Eric ice cream is its own business; everything else is the burger shop. */
-export const businessOf = (category: CategoryId): Business => (category === "iceCream" ? "iceCream" : "burger");
+export const businessOf = (category: CategoryId): Business => (category === ICE_CREAM ? "iceCream" : "burger");
 
 /**
  * A completed sale. Each line keeps the price and cost at the time of sale, so later

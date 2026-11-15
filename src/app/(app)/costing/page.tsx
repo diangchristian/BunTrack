@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { NoAccess } from "@/components/no-access";
 import { canUseStore } from "@/features/auth/queries";
+import { categoryStore } from "@/features/categories/store";
 import { CostingWorkbench } from "@/features/inventory/components/costing-workbench";
 import { getInventory } from "@/features/inventory/queries";
 import { getProducts } from "@/features/products/queries";
@@ -25,6 +26,7 @@ export default async function CostingPage({ searchParams }: PageProps<"/costing"
         products={products}
         items={items}
         recipes={recipes}
+        categories={categoryStore.list()}
         initialProductId={typeof product === "string" ? product : undefined}
       />
     </div>

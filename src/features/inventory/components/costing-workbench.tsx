@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { productMargin } from "@/features/products/costing";
-import { categoryLabel, type CostedProduct } from "@/features/products/types";
+import { categoryLabel, ICE_CREAM, type Category } from "@/features/categories/types";
+import type { CostedProduct } from "@/features/products/types";
 import { formatCentavos } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { InventoryItem, RecipeLine } from "../types";
@@ -15,7 +16,7 @@ import { RecipeBreakdown } from "./recipe-breakdown";
 
 /** Made items: ≥60% healthy, 55–60% watch, below 55% flagged. Resold Dan Eric margins are set by the dealer. */
 function health(product: CostedProduct) {
-  if (product.category === "iceCream") return { label: "Dealer-set", variant: "neutral" } as const;
+  if (product.category === ICE_CREAM) return { label: "Dealer-set", variant: "neutral" } as const;
   if (!product.hasRecipe) return { label: "No recipe", variant: "neutral" } as const;
   const { marginPercent } = productMargin(product.price, product.cost);
   if (marginPercent >= 60) return { label: "Healthy", variant: "success" } as const;
@@ -27,9 +28,11 @@ export function CostingWorkbench({
   products,
   items,
   recipes,
+  categories,
   initialProductId,
 }: {
   products: CostedProduct[];
+  categories: Category[];
   items: InventoryItem[];
   recipes: Record<string, RecipeLine[]>;
   initialProductId?: string;
@@ -39,7 +42,7 @@ export function CostingWorkbench({
   );
   const product = products.find((p) => p.id === productId);
   if (!product) return <p className="text-sm text-muted-foreground">Add a product first.</p>;
-  const resold = product.category === "iceCream";
+  const resold = product.category === ICE_CREAM;
 
   return (
     <div className="flex flex-col gap-6">
@@ -64,7 +67,7 @@ export function CostingWorkbench({
               </Select>
             </div>
             <div className="flex flex-wrap gap-2 pb-2">
-              <Badge variant="brand">{categoryLabel(product.category)}</Badge>
+              <Badge variant="brand">{categoryLabel(product.category, categories)}</Badge>
               <Badge variant="success">Costs synced with Inventory</Badge>
             </div>
           </section>

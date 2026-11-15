@@ -6,15 +6,19 @@ import { Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { formatCentavos } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { categories, type CategoryId, type MenuProduct } from "../types";
+import type { Category } from "@/features/categories/types";
+import type { CategoryId, MenuProduct } from "../types";
 import { ProductImage } from "@/features/products/components/product-image";
 
 export function ProductGrid({
   menu,
+  categories,
   quantities,
   onAdd,
 }: {
   menu: MenuProduct[];
+  /** In the order set in Settings → Product categories. */
+  categories: Category[];
   quantities: Map<string, number>;
   onAdd: (productId: string) => void;
 }) {

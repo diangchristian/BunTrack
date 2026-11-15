@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { categories, type CategoryId } from "./types";
 
 /** "149" or "149.50" (pesos, up to 2 decimals) to integer centavos; null if malformed. */
 export function parsePesos(value: string): number | null {
@@ -24,7 +23,8 @@ export const productFormSchema = z
   .object({
   name: z.string().trim().min(1, { error: "Enter a product name" }).max(60, { error: "Keep the name under 60 characters" }),
   description: z.string().trim().max(120, { error: "Keep the description under 120 characters" }),
-  category: z.enum(categories.map((c) => c.id) as [CategoryId, ...CategoryId[]], { error: "Pick a category" }),
+  // Checked against the current category list in the action (the list is editable in Settings).
+  category: z.string().trim().min(1, { error: "Pick a category" }),
   price: priceSchema,
   // An unchecked checkbox is simply missing from the form data.
   available: z.literal("on").nullish().transform((v) => v === "on"),

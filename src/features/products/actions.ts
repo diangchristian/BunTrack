@@ -4,6 +4,8 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 
 import { logActivity } from "@/features/activity/log";
+import { categoryStore } from "@/features/categories/store";
+import { ICE_CREAM } from "@/features/categories/types";
 import { canUseStore } from "@/features/auth/queries";
 import { formatCentavos } from "@/lib/format";
 import { inventoryStore } from "@/features/inventory/store";
@@ -30,6 +32,9 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     image: formData.get("image") ?? "",
   });
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
+  if (!categoryStore.list().some((c) => c.id === parsed.data.category)) {
+    return { fieldErrors: { category: ["That category no longer exists. Pick another."] } };
+  }
 
   const id = formData.get("id");
   if (typeof id === "string" && id) {
@@ -50,7 +55,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     });
   } else {
     const created = productStore.create(parsed.data);
-    if (created.category === "iceCream") {
+    if (created.category === ICE_CREAM) {
       // Dan Eric items are resold as-is: give the product its own stock item and a 1-unit recipe.
       // It starts at 0 on hand (sold out) and gets its dealer price from the first Stock In.
       const item = inventoryStore.addItem({ name: created.name, category: "Ice Cream (Dan Eric)", unit: "pcs", quantity: 0, minimum: 0, unitCost: 0 });

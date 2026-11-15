@@ -5,7 +5,8 @@ import { NoAccess } from "@/components/no-access";
 import { canUseStore } from "@/features/auth/queries";
 import { SegmentedLinks } from "@/components/segmented-links";
 import { StatCard } from "@/components/stat-card";
-import { categoryLabel } from "@/features/products/types";
+import { categoryStore } from "@/features/categories/store";
+import { categoryLabel } from "@/features/categories/types";
 import { ProductPerformance } from "@/features/sales/components/product-performance";
 import { RevenueChart } from "@/features/sales/components/revenue-chart";
 import { TransactionHistory } from "@/features/sales/components/transaction-history";
@@ -104,7 +105,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
               <p className="text-xs font-semibold text-muted-foreground">By category</p>
               {report.byCategory.map((c) => (
                 <p key={c.category} className="flex items-center gap-2.5 text-xs">
-                  <span className="w-24 shrink-0 text-muted-foreground">{categoryLabel(c.category)}</span>
+                  <span className="w-24 shrink-0 text-muted-foreground">{categoryLabel(c.category, categoryStore.list())}</span>
                   <span className="h-2 flex-1 rounded-full bg-neutral-soft" aria-hidden>
                     <span className="block h-2 rounded-full bg-chart-1" style={{ width: `${topCategory ? (c.revenue / topCategory) * 100 : 0}%` }} />
                   </span>
@@ -117,7 +118,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
       </div>
 
       <section className="rounded-xl border bg-card p-5 shadow-[0_2px_8px_rgb(31_26_23/0.06)]">
-        <ProductPerformance products={report.products} />
+        <ProductPerformance products={report.products} categories={categoryStore.list()} />
       </section>
       <section className="rounded-xl border bg-card p-5 shadow-[0_2px_8px_rgb(31_26_23/0.06)]">
         <TransactionHistory key={`${period}-${business}`} transactions={report.transactions} />

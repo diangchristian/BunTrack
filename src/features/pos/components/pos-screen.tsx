@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import type { Category } from "@/features/categories/types";
 import type { Settings } from "@/features/settings/schemas";
 import type { MenuProduct, Receipt } from "../types";
 import { OrderPanel, type OrderLine } from "./order-panel";
@@ -9,7 +10,7 @@ import { PaymentDialog } from "./payment-dialog";
 import { ProductGrid } from "./product-grid";
 import { ReceiptDialog } from "./receipt-dialog";
 
-export function PosScreen({ menu, cashierName, shop }: { menu: MenuProduct[]; cashierName: string; shop: Settings }) {
+export function PosScreen({ menu, categories, cashierName, shop }: { menu: MenuProduct[]; categories: Category[]; cashierName: string; shop: Settings }) {
   // productId -> quantity, in the order items were first added
   const [quantities, setQuantities] = useState(new Map<string, number>());
   const [paying, setPaying] = useState(false);
@@ -43,7 +44,7 @@ export function PosScreen({ menu, cashierName, shop }: { menu: MenuProduct[]; ca
           <h1 className="text-[22px] leading-[30px] font-bold">Point of Sale</h1>
           <p className="text-sm text-muted-foreground">Cashier: {cashierName}</p>
         </div>
-        <ProductGrid menu={menu} quantities={quantities} onAdd={(id) => setQuantity(id, (quantities.get(id) ?? 0) + 1)} />
+        <ProductGrid menu={menu} categories={categories} quantities={quantities} onAdd={(id) => setQuantity(id, (quantities.get(id) ?? 0) + 1)} />
       </div>
 
       <div className="flex min-h-0 flex-col border-t lg:border-t-0 lg:border-l">

@@ -30,8 +30,8 @@ test("a missing checkbox means unavailable", () => {
   assert.equal(result.data.available, false);
 });
 
-test("rejects a blank name, a zero or malformed price and an unknown category", () => {
-  const result = productFormSchema.safeParse({ ...valid, name: "  ", price: "0", category: "pizza" });
+test("rejects a blank name, a zero or malformed price and a missing category", () => {
+  const result = productFormSchema.safeParse({ ...valid, name: "  ", price: "0", category: "" });
   assert.equal(result.success, false);
   const fields = result.error!.issues.map((issue) => issue.path[0]).sort();
   assert.deepEqual(fields, ["category", "name", "price"]);

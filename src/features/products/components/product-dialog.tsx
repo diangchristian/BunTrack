@@ -15,10 +15,10 @@ import { keepValuesOnSubmit } from "@/lib/forms";
 import { archiveProduct, saveProduct, type ProductFormState } from "../actions";
 import { productMargin } from "../costing";
 import { parsePesos } from "../schemas";
-import { categories, type CategoryId, type CostedProduct } from "../types";
+import { ICE_CREAM, type Category } from "@/features/categories/types";
+import type { CategoryId, CostedProduct } from "../types";
 import { ProductImage } from "./product-image";
 
-const categoryItems = categories.map((c) => ({ value: c.id, label: c.label }));
 const centavosToInput = (c: number) => (c / 100).toFixed(2);
 
 /**
@@ -44,17 +44,18 @@ async function resizePhoto(file: File, max = 512) {
 }
 
 /** product = null → "Add Product"; a product → "Edit Product". */
-export function ProductDialog({ product, onClose }: { product: CostedProduct | null; onClose: () => void }) {
+export function ProductDialog({ product, categories, onClose }: { product: CostedProduct | null; categories: Category[]; onClose: () => void }) {
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-2xl">
-        <ProductForm product={product} onDone={onClose} />
+        <ProductForm product={product} categories={categories} onDone={onClose} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function ProductForm({ product, onDone }: { product: CostedProduct | null; onDone: () => void }) {
+function ProductForm({ product, categories, onDone }: { product: CostedProduct | null; categories: Category[]; onDone: () => void }) {
+  const categoryItems = categories.map((c) => ({ value: c.id, label: c.label }));
   const [archiveError, setArchiveError] = useState<string>();
   const [state, formAction, saving] = useActionState(async (prev: ProductFormState, formData: FormData) => {
     setArchiveError(undefined); // only the latest attempt's error is shown
@@ -63,14 +64,14 @@ function ProductForm({ product, onDone }: { product: CostedProduct | null; onDon
     return result;
   }, {});
   const [price, setPrice] = useState(product ? centavosToInput(product.price) : "");
-  const [category, setCategory] = useState<CategoryId>(product?.category ?? "burgers");
+  const [category, setCategory] = useState<CategoryId>(product?.category ?? categories[0]?.id ?? "");
   const [photo, setPhoto] = useState(product?.image ?? "");
   const [photoError, setPhotoError] = useState<string>();
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [archiving, startArchive] = useTransition();
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const resold = category === "iceCream"; // Dan Eric ice cream: bought ready-made
+  const resold = category === ICE_CREAM; // Dan Eric ice cream: bought ready-made
   const priceC = parsePesos(price);
   // Cost comes from the recipe and Inventory unit costs, so it's read-only here.
   const costC = product?.hasRecipe ? product.cost : null;

@@ -1,14 +1,7 @@
-export const categories = [
-  { id: "burgers", label: "Burgers" },
-  { id: "combos", label: "Combo Meals" },
-  { id: "sides", label: "Sides" },
-  { id: "drinks", label: "Drinks" },
-  { id: "iceCream", label: "Ice Cream" },
-] as const;
+import { ICE_CREAM } from "@/features/categories/types";
 
-export type CategoryId = (typeof categories)[number]["id"];
-
-export const categoryLabel = (id: CategoryId) => categories.find((c) => c.id === id)!.label;
+/** A category id from Settings → Product categories (e.g. "burgers", "iceCream"). */
+export type CategoryId = string;
 
 export type Product = {
   id: string;
@@ -40,7 +33,7 @@ export type CostedProduct = Product & {
 export function unavailableReason(p: Pick<CostedProduct, "available" | "servingsLeft" | "limitedBy" | "category">) {
   if (!p.available) return "Switched off";
   // Dan Eric items run out of themselves; made items name the missing ingredient.
-  if (p.servingsLeft === 0) return p.category === "iceCream" ? "Sold out" : `Out of ${p.limitedBy}`;
+  if (p.servingsLeft === 0) return p.category === ICE_CREAM ? "Sold out" : `Out of ${p.limitedBy}`;
   return undefined;
 }
 

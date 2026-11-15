@@ -10,18 +10,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCentavos } from "@/lib/format";
 import { productMargin } from "../costing";
-import { categories, categoryLabel, isOnSale, unavailableReason, type CostedProduct } from "../types";
+import { categoryLabel, type Category } from "@/features/categories/types";
+import { isOnSale, unavailableReason, type CostedProduct } from "../types";
 import { ProductDialog } from "./product-dialog";
 import { ProductImage } from "./product-image";
 
-const categoryFilter = [{ value: "all", label: "All categories" }, ...categories.map((c) => ({ value: c.id, label: c.label }))];
 const statusFilter = [
   { value: "all", label: "All status" },
   { value: "available", label: "Available" },
   { value: "unavailable", label: "Unavailable" },
 ];
 
-export function ProductsManager({ products }: { products: CostedProduct[] }) {
+export function ProductsManager({ products, categories }: { products: CostedProduct[]; categories: Category[] }) {
+  const categoryFilter = [{ value: "all", label: "All categories" }, ...categories.map((c) => ({ value: c.id, label: c.label }))];
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
@@ -94,7 +95,7 @@ export function ProductsManager({ products }: { products: CostedProduct[] }) {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden text-muted-foreground md:table-cell">{categoryLabel(product.category)}</TableCell>
+                  <TableCell className="hidden text-muted-foreground md:table-cell">{categoryLabel(product.category, categories)}</TableCell>
                   <TableCell className="text-right font-semibold tabular-nums">{formatCentavos(product.price)}</TableCell>
                   <TableCell className="hidden text-right text-muted-foreground tabular-nums lg:table-cell">
                     {product.hasRecipe ? formatCentavos(product.cost) : "No recipe"}
@@ -134,7 +135,7 @@ export function ProductsManager({ products }: { products: CostedProduct[] }) {
         Showing {visible.length} of {products.length} products
       </p>
 
-      {editing !== undefined && <ProductDialog product={editing} onClose={() => setEditing(undefined)} />}
+      {editing !== undefined && <ProductDialog product={editing} categories={categories} onClose={() => setEditing(undefined)} />}
     </div>
   );
 }

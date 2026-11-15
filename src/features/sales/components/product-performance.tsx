@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { categoryLabel } from "@/features/products/types";
+import { categoryLabel, type Category } from "@/features/categories/types";
 import { formatCentavos } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { SalesReport } from "../report";
@@ -15,7 +15,7 @@ const sorts = [
   { id: "least", label: "Least-selling" },
 ] as const;
 
-export function ProductPerformance({ products }: { products: SalesReport["products"] }) {
+export function ProductPerformance({ products, categories }: { products: SalesReport["products"]; categories: Category[] }) {
   const [sort, setSort] = useState<(typeof sorts)[number]["id"]>("best");
   const rows = [...products].sort((a, b) => (sort === "profit" ? b.profit - a.profit : sort === "least" ? a.units - b.units : b.units - a.units));
 
@@ -63,7 +63,7 @@ export function ProductPerformance({ products }: { products: SalesReport["produc
                 return (
                   <TableRow key={p.productId}>
                     <TableCell className="font-semibold">{p.name}</TableCell>
-                    <TableCell className="hidden text-muted-foreground md:table-cell">{categoryLabel(p.category)}</TableCell>
+                    <TableCell className="hidden text-muted-foreground md:table-cell">{categoryLabel(p.category, categories)}</TableCell>
                     <TableCell className="text-right font-semibold tabular-nums">{p.units}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatCentavos(p.revenue)}</TableCell>
                     <TableCell className="hidden text-right tabular-nums sm:table-cell">{formatCentavos(p.profit)}</TableCell>
