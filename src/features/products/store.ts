@@ -1,4 +1,5 @@
 import type { ProductFormValues } from "./schemas";
+import { seedSampleCatalog } from "@/lib/sample-data";
 import type { Product } from "./types";
 
 export function createProductStore(seed: Product[]) {
@@ -57,4 +58,4 @@ const sampleProducts: Product[] = [
 
 // Kept on globalThis so dev hot-reloads don't wipe edits (same trick as lib/db.ts).
 const globalForStore = globalThis as unknown as { productStore?: ReturnType<typeof createProductStore> };
-export const productStore = (globalForStore.productStore ??= createProductStore(sampleProducts));
+export const productStore = (globalForStore.productStore ??= createProductStore(seedSampleCatalog ? sampleProducts : []));

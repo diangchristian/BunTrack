@@ -42,6 +42,7 @@ function sampleOrders(today: string): Order[] {
   const burgers = products.filter((p) => p.category !== "iceCream");
   // The sheet shows mostly Pints, Half Gallons, 1 Liters and 3.6 Liters selling.
   const iceCream = products.filter((p) => ["pint", "one-liter", "half-gallon", "three-six-liter"].includes(p.id));
+  if (burgers.length === 0) return []; // no menu yet (e.g. sample catalog off), so no history to invent
   const line = (p: (typeof products)[number], quantity: number) => ({
     productId: p.id, name: p.name, category: p.category, quantity, unitPrice: p.price, unitCost: p.cost,
   });
@@ -54,14 +55,15 @@ function sampleOrders(today: string): Order[] {
     const count = (weekend ? 26 : 18) + Math.floor(random() * 8);
     for (let i = 0; i < count; i++) {
       const lines = [line(pick(burgers), 1 + Math.floor(random() * 2))];
-      if (random() < 0.45) lines.push(line(pick(burgers.filter((p) => p.id !== lines[0].productId)), 1));
-      if (random() < 0.02) lines.push(line(pick(iceCream), 1)); // the odd mixed order
+      const others = burgers.filter((p) => p.id !== lines[0].productId);
+      if (others.length && random() < 0.45) lines.push(line(pick(others), 1));
+      if (iceCream.length && random() < 0.02) lines.push(line(pick(iceCream), 1)); // the odd mixed order
       // Spread from 10:00 to 21:00 Manila (UTC+8).
       const minutes = 120 + Math.floor((i / count) * 660);
       const completedAt = new Date(Date.parse(`${date}T00:00:00Z`) + minutes * 60_000).toISOString();
       orders.push({ number: `#${number++}`, completedAt, date, cashier: pick(["Maria Reyes", "Carlo Mendoza"]), method: random() < 0.82 ? "cash" : "gcash", lines, sample: true });
     }
-    if (random() < 0.7) {
+    if (iceCream.length && random() < 0.7) {
       const completedAt = new Date(Date.parse(`${date}T00:00:00Z`) + 9 * 3_600_000).toISOString();
       orders.push({ number: `#${number++}`, completedAt, date, cashier: "Maria Reyes", method: random() < 0.85 ? "cash" : "gcash", lines: [line(pick(iceCream), 1)], sample: true });
     }

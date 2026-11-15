@@ -73,7 +73,13 @@ export function ProductGrid({
       </div>
 
       {visible.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">No menu items match “{query}”.</p>
+        <p className="py-12 text-center text-sm text-muted-foreground">
+          {menu.length === 0
+            ? "No products yet. Add them on the Products page, then set their recipe in Costing & Pricing."
+            : search
+              ? `No menu items match “${query}”.`
+              : "No products in this category yet."}
+        </p>
       ) : (
         <ul className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3">
           {visible.map((product) => {

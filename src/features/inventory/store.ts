@@ -1,3 +1,4 @@
+import { seedSampleCatalog } from "@/lib/sample-data";
 import { formatQuantity } from "./costing";
 import type { InventoryItem, MovementType, RecipeLine, StockMovement } from "./types";
 
@@ -162,4 +163,4 @@ const sampleRecipes: Record<string, RecipeLine[]> = {
 
 // Kept on globalThis so dev hot-reloads don't wipe changes (same trick as lib/db.ts).
 const globalForStore = globalThis as unknown as { inventoryStore?: InventoryStore };
-export const inventoryStore = (globalForStore.inventoryStore ??= createInventoryStore({ items: sampleItems, recipes: sampleRecipes }));
+export const inventoryStore = (globalForStore.inventoryStore ??= createInventoryStore(seedSampleCatalog ? { items: sampleItems, recipes: sampleRecipes } : { items: [], recipes: {} }));
