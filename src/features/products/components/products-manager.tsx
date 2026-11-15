@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCentavos } from "@/lib/format";
 import { productMargin } from "../costing";
-import { categories, categoryLabel, isOnSale, isSoldOut, type Product } from "../types";
+import { categories, categoryLabel, isOnSale, unavailableReason, type CostedProduct } from "../types";
 import { ProductDrawer } from "./product-drawer";
 import { ProductImage } from "./product-image";
 
@@ -21,12 +21,12 @@ const statusFilter = [
   { value: "unavailable", label: "Unavailable" },
 ];
 
-export function ProductsManager({ products }: { products: Product[] }) {
+export function ProductsManager({ products }: { products: CostedProduct[] }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
   // undefined = drawer closed, null = adding, Product = editing
-  const [editing, setEditing] = useState<Product | null | undefined>(undefined);
+  const [editing, setEditing] = useState<CostedProduct | null | undefined>(undefined);
 
   const search = query.trim().toLowerCase();
   const visible = products.filter(
@@ -90,21 +90,27 @@ export function ProductsManager({ products }: { products: Product[] }) {
                   <TableCell className="hidden text-muted-foreground md:table-cell">{categoryLabel(product.category)}</TableCell>
                   <TableCell className="text-right font-semibold tabular-nums">{formatCentavos(product.price)}</TableCell>
                   <TableCell className="hidden text-right text-muted-foreground tabular-nums lg:table-cell">
-                    {formatCentavos(product.cost)}
+                    {product.hasRecipe ? formatCentavos(product.cost) : "No recipe"}
                   </TableCell>
                   <TableCell className="hidden text-right sm:table-cell">
-                    <p className={margin.profit >= 0 ? "font-semibold text-success-strong tabular-nums" : "font-semibold text-destructive tabular-nums"}>
-                      {formatCentavos(margin.profit)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{margin.marginPercent}% margin</p>
+                    {product.hasRecipe ? (
+                      <>
+                        <p className={margin.profit >= 0 ? "font-semibold text-success-strong tabular-nums" : "font-semibold text-destructive tabular-nums"}>
+                          {formatCentavos(margin.profit)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{margin.marginPercent}% margin</p>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    {isSoldOut(product) ? (
-                      <Badge variant="warning">Sold out</Badge>
-                    ) : (
-                      <Badge variant={product.available ? "success" : "danger"}>{product.available ? "Available" : "Unavailable"}</Badge>
+                    <Badge variant={!product.available ? "danger" : product.servingsLeft === 0 ? "warning" : "success"}>
+                      {unavailableReason(product) ?? "Available"}
+                    </Badge>
+                    {product.servingsLeft !== null && product.servingsLeft > 0 && (
+                      <p className="mt-1 text-xs text-muted-foreground">{product.servingsLeft} left</p>
                     )}
-                    {product.stock !== null && <p className="mt-1 text-xs text-muted-foreground">{product.stock} in stock</p>}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" onClick={() => setEditing(product)} aria-label={`Edit ${product.name}`}>

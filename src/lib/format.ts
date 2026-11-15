@@ -10,3 +10,8 @@ export function formatPeso(amount: number, { cents = false } = {}) {
 export function formatCentavos(centavos: number) {
   return pesosWithCents.format(centavos / 100);
 }
+
+/** Today's date in the shop's timezone as YYYY-MM-DD (en-CA formats it that way). */
+export function manilaDate(date = new Date()) {
+  return date.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
+}

@@ -5,10 +5,10 @@ import { checkoutOrder, toMenuProduct } from "./service";
 import type { MenuProduct } from "./types";
 
 const menu: MenuProduct[] = [
-  { id: "burger", name: "Classic Cheeseburger", category: "burgers", price: 14900, stock: null, available: true },
-  { id: "tea", name: "Iced Tea", category: "drinks", price: 5900, stock: null, available: true },
-  { id: "rings", name: "Onion Rings", category: "sides", price: 8900, stock: null, available: false },
-  { id: "pint", name: "Pint", category: "iceCream", price: 9200, stock: 2, available: true },
+  { id: "burger", name: "Classic Cheeseburger", category: "burgers", price: 14900, servingsLeft: null, available: true },
+  { id: "tea", name: "Iced Tea", category: "drinks", price: 5900, servingsLeft: null, available: true },
+  { id: "rings", name: "Onion Rings", category: "sides", price: 8900, servingsLeft: null, available: false },
+  { id: "pint", name: "Pint", category: "iceCream", price: 9200, servingsLeft: 2, available: true },
 ];
 
 const base = { method: "cash" } as const;
@@ -60,15 +60,21 @@ test("GCash is charged the exact total with no change", () => {
 
 test("rejects selling more ice cream units than are in stock", () => {
   const result = checkoutOrder(menu, { ...base, amountReceived: 99999, lines: [{ productId: "pint", quantity: 3 }] });
-  assert.deepEqual(result, { ok: false, error: "Only 2 Pint left in stock." });
+  assert.deepEqual(result, { ok: false, error: "Only 2 Pint left." });
 });
 
-test("the POS menu hides production cost and marks counted items with 0 units as sold out", () => {
-  const product = {
-    id: "pint", name: "Pint", description: "Dan Eric", category: "iceCream", price: 9200, cost: 7600, stock: 0, available: true,
+test("the POS menu hides cost, says which ingredient ran out, and says Sold out for resold items", () => {
+  const rings = {
+    id: "onion-rings", name: "Onion Rings", description: "", category: "sides", price: 8900, available: true,
+    cost: 1890, hasRecipe: true, servingsLeft: 0, limitedBy: "Onions",
   } as const;
-  assert.deepEqual(toMenuProduct(product), {
-    id: "pint", name: "Pint", category: "iceCream", price: 9200, image: undefined, stock: 0, available: false, unavailableReason: "Sold out",
+  assert.deepEqual(toMenuProduct(rings), {
+    id: "onion-rings", name: "Onion Rings", category: "sides", price: 8900, image: undefined,
+    servingsLeft: 0, available: false, unavailableReason: "Out of Onions",
   });
-  assert.equal(toMenuProduct({ ...product, stock: 5 }).available, true);
+  // Dan Eric items run out of themselves; a made item named like its ingredient still names it.
+  assert.equal(toMenuProduct({ ...rings, category: "iceCream", name: "Pint", limitedBy: "Pint" }).unavailableReason, "Sold out");
+  assert.equal(toMenuProduct({ ...rings, name: "French Fries", limitedBy: "French Fries" }).unavailableReason, "Out of French Fries");
+  assert.equal(toMenuProduct({ ...rings, servingsLeft: 5 }).available, true);
+  assert.equal(toMenuProduct({ ...rings, servingsLeft: 5, available: false }).unavailableReason, "Switched off");
 });

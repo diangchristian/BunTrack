@@ -24,7 +24,7 @@ export function PosScreen({ menu, cashierName }: { menu: MenuProduct[]; cashierN
       const next = new Map(prev);
       if (quantity <= 0) next.delete(productId);
       // Ice cream can't go above the units on hand; made items cap at 99 per order.
-      else next.set(productId, Math.min(quantity, menu.find((p) => p.id === productId)?.stock ?? 99));
+      else next.set(productId, Math.min(quantity, menu.find((p) => p.id === productId)?.servingsLeft ?? 99));
       return next;
     });
   }

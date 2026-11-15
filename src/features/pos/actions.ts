@@ -3,7 +3,8 @@
 import { refresh } from "next/cache";
 
 import { getCurrentUser } from "@/features/auth/queries";
-import { productStore } from "@/features/products/store";
+import { inventoryStore } from "@/features/inventory/store";
+import { manilaDate } from "@/lib/format";
 import { getMenu } from "./queries";
 import { checkoutSchema } from "./schemas";
 import { checkoutOrder } from "./service";
@@ -23,18 +24,22 @@ export async function completeOrder(input: unknown): Promise<{ ok: true; receipt
   const result = checkoutOrder(await getMenu(), parsed.data);
   if (!result.ok) return result;
 
-  // Re-checks stock at the moment of sale, so two tills can't sell the last unit twice.
-  if (!productStore.sell(result.order.lines)) return { ok: false, error: "An item just sold out. Check the order and try again." };
-  refresh(); // the POS re-renders with the new stock counts
+  // Re-checks stock at the moment of sale (two tills can't sell the last unit twice) and
+  // deducts every recipe ingredient. All-or-nothing: a short ingredient deducts nothing.
+  const orderNumber = `#${nextOrderNumber}`;
+  const sale = inventoryStore.consume(result.order.lines, orderNumber, user.name, manilaDate());
+  if (!sale.ok) return { ok: false, error: `Not enough ${sale.shortOf} for this order. Remove some items and try again.` };
+  nextOrderNumber++;
+  refresh(); // the POS re-renders with the new servings left
 
-  // shortcut: the order itself is not saved yet, only ice cream stock is deducted (in memory).
+  // shortcut: the order itself is not saved yet; only the stock movements are (in memory).
   // Once the database exists, save the order, its lines, the payment and the stock
   // movements in one transaction here, keyed so a double-submit can't save twice.
   return {
     ok: true,
     receipt: {
       ...result.order,
-      orderNumber: `#${nextOrderNumber++}`,
+      orderNumber,
       completedAt: new Date().toISOString(),
       method: parsed.data.method,
     },

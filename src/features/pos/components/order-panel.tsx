@@ -71,7 +71,7 @@ export function OrderPanel({
                     <button
                       type="button"
                       onClick={() => onQuantityChange(product.id, quantity + 1)}
-                      disabled={quantity >= (product.stock ?? 99)}
+                      disabled={quantity >= (product.servingsLeft ?? 99)}
                       aria-label={`Add one ${product.name}`}
                       className="flex size-8 items-center justify-center text-primary disabled:opacity-40"
                     >

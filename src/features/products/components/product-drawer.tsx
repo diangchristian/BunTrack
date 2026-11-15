@@ -1,7 +1,9 @@
 "use client";
 
+import { keepValuesOnSubmit } from "@/lib/forms";
 import { useActionState, useState, useTransition } from "react";
-import { Archive, Check } from "lucide-react";
+import Link from "next/link";
+import { Archive, Calculator, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +15,7 @@ import { formatCentavos } from "@/lib/format";
 import { archiveProduct, saveProduct, type ProductFormState } from "../actions";
 import { productMargin } from "../costing";
 import { parsePesos } from "../schemas";
-import { categories, type Product } from "../types";
+import { categories, type CostedProduct } from "../types";
 import { ProductImage } from "./product-image";
 
 const categoryItems = categories.map((c) => ({ value: c.id, label: c.label }));
@@ -25,7 +27,7 @@ export function ProductDrawer({
   onClose,
 }: {
   open: boolean;
-  product: Product | null;
+  product: CostedProduct | null;
   onClose: () => void;
 }) {
   return (
@@ -40,7 +42,7 @@ export function ProductDrawer({
 
 const centavosToInput = (c: number) => (c / 100).toFixed(2);
 
-function ProductForm({ product, onDone }: { product: Product | null; onDone: () => void }) {
+function ProductForm({ product, onDone }: { product: CostedProduct | null; onDone: () => void }) {
   const [archiveError, setArchiveError] = useState<string>();
   const [state, formAction, saving] = useActionState(async (prev: ProductFormState, formData: FormData) => {
     setArchiveError(undefined); // only the latest attempt's error is shown
@@ -49,14 +51,14 @@ function ProductForm({ product, onDone }: { product: Product | null; onDone: () 
     return result;
   }, {});
   const [price, setPrice] = useState(product ? centavosToInput(product.price) : "");
-  const [cost, setCost] = useState(product ? centavosToInput(product.cost) : "");
   const [category, setCategory] = useState<string>(product?.category ?? "burgers");
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [archiving, startArchive] = useTransition();
 
-  const resold = category === "iceCream"; // Dan Eric ice cream: bought ready-made, counted by unit
+  const resold = category === "iceCream"; // Dan Eric ice cream: bought ready-made
   const priceC = parsePesos(price);
-  const costC = parsePesos(cost);
+  // Cost comes from the recipe and Inventory unit costs, so it's read-only here.
+  const costC = product?.hasRecipe ? product.cost : null;
   const margin = priceC && costC !== null ? productMargin(priceC, costC) : null;
   const errors = state.fieldErrors ?? {};
   const busy = saving || archiving;
@@ -73,7 +75,7 @@ function ProductForm({ product, onDone }: { product: Product | null; onDone: () 
   }
 
   return (
-    <form action={formAction} className="flex min-h-0 flex-1 flex-col">
+    <form onSubmit={keepValuesOnSubmit(formAction)} className="flex min-h-0 flex-1 flex-col">
       {product && <input type="hidden" name="id" value={product.id} />}
 
       <SheetHeader className="border-b px-6 py-5">
@@ -86,7 +88,7 @@ function ProductForm({ product, onDone }: { product: Product | null; onDone: () 
           <h3 className="text-[15px] font-semibold">Basic information</h3>
           <div className="flex gap-4">
             <ProductImage
-              product={{ name: product?.name ?? "New product", category: category as Product["category"], image: product?.image, available: true }}
+              product={{ name: product?.name ?? "New product", category: category as CostedProduct["category"], image: product?.image, available: true }}
               sizes="96px"
               className="hidden size-24 sm:flex"
             />
@@ -99,7 +101,7 @@ function ProductForm({ product, onDone }: { product: Product | null; onDone: () 
               </Field>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Category" htmlFor="category" error={errors.category?.[0]}>
               <Select name="category" items={categoryItems} value={category} onValueChange={(v) => v && setCategory(v)}>
                 <SelectTrigger id="category" className="h-10 w-full">
@@ -117,15 +119,7 @@ function ProductForm({ product, onDone }: { product: Product | null; onDone: () 
             <Field label="Selling price (₱)" htmlFor="price" error={errors.price?.[0]}>
               <Input id="price" name="price" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="149.00" required aria-invalid={!!errors.price} className="h-10 tabular-nums" />
             </Field>
-            <Field label={resold ? "Dealer price (₱)" : "Production cost (₱)"} htmlFor="cost" error={errors.cost?.[0]}>
-              <Input id="cost" name="cost" inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="58.40" required aria-invalid={!!errors.cost} className="h-10 tabular-nums" />
-            </Field>
           </div>
-          <p className="-mt-2 text-xs text-muted-foreground">
-            {resold
-              ? "What you pay Dan Eric per unit. Profit is the selling price minus this."
-              : "Enter the cost per serving for now. It will be calculated from the recipe once Inventory is built."}
-          </p>
         </section>
 
         <label className="flex items-center gap-3 rounded-[10px] bg-success-soft p-3">
@@ -133,16 +127,29 @@ function ProductForm({ product, onDone }: { product: Product | null; onDone: () 
           <span>
             <span className="block text-sm font-semibold text-success-strong">Available on POS</span>
             <span className="block text-xs text-muted-foreground">
-              {product?.unavailableReason && !product.available
-                ? `Currently off: ${product.unavailableReason}`
-                : "Turn off to hide it from sale without deleting it."}
-              {resold && ` ${product?.stock ?? 0} in stock; it shows as sold out at 0.`}
+              Turn off to hide it from sale without deleting it.
+              {product?.servingsLeft != null &&
+                (product.servingsLeft === 0
+                  ? ` It's out of ${product.limitedBy} right now, so the POS shows it as unavailable.`
+                  : ` Stock can make ${product.servingsLeft} more (${product.limitedBy} runs out first).`)}
             </span>
           </span>
         </label>
 
         <section className="flex flex-col gap-2 rounded-[14px] border bg-secondary p-4 text-sm" aria-live="polite">
-          <h3 className="mb-1 text-[15px] font-semibold">Cost summary</h3>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <h3 className="text-[15px] font-semibold">Cost summary</h3>
+            {product && (
+              <Link href={`/costing?product=${product.id}`} className="flex items-center gap-1 text-xs font-semibold text-brand-strong hover:underline">
+                <Calculator className="size-3.5" aria-hidden /> {product.hasRecipe ? "Edit recipe" : "Add recipe"}
+              </Link>
+            )}
+          </div>
+          {!product?.hasRecipe && (
+            <p className="text-xs text-muted-foreground">
+              {product ? "No recipe yet. Add one in Costing & Pricing to see the cost." : "Save first, then add the recipe in Costing & Pricing."}
+            </p>
+          )}
           <Row label={resold ? "Dealer price / unit" : "Production cost / serving"} value={costC !== null ? formatCentavos(costC) : "—"} />
           <Row label="Selling price" value={priceC ? formatCentavos(priceC) : "—"} />
           <Row label="Gross profit" value={margin ? formatCentavos(margin.profit) : "—"} strong={!!margin && margin.profit >= 0} />

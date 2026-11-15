@@ -23,7 +23,6 @@ export const productFormSchema = z.object({
   description: z.string().trim().max(120, { error: "Keep the description under 120 characters" }),
   category: z.enum(categories.map((c) => c.id) as [CategoryId, ...CategoryId[]], { error: "Pick a category" }),
   price: pesos("a price").refine((v) => v > 0, { error: "Price must be more than ₱0" }),
-  cost: pesos("a cost"),
   // An unchecked checkbox is simply missing from the form data.
   available: z.literal("on").nullish().transform((v) => v === "on"),
 });

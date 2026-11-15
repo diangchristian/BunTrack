@@ -12,8 +12,9 @@ export const metadata: Metadata = { title: "Products" };
 export default async function ProductsPage() {
   const products = await getProducts();
   const unavailable = products.filter((p) => !isOnSale(p));
-  const avgMargin = products.length
-    ? products.reduce((sum, p) => sum + productMargin(p.price, p.cost).marginPercent, 0) / products.length
+  const costed = products.filter((p) => p.hasRecipe); // no recipe = no cost yet, so leave it out
+  const avgMargin = costed.length
+    ? costed.reduce((sum, p) => sum + productMargin(p.price, p.cost).marginPercent, 0) / costed.length
     : 0;
 
   return (

@@ -2,7 +2,11 @@ import type { Product } from "@/features/products/types";
 
 export { categories, type CategoryId } from "@/features/products/types";
 
-export type MenuProduct = Pick<Product, "id" | "name" | "category" | "price" | "image" | "stock" | "available" | "unavailableReason">;
+export type MenuProduct = Pick<Product, "id" | "name" | "category" | "price" | "image" | "available"> & {
+  /** Servings the stock can still make; null = not tracked (no recipe). */
+  servingsLeft: number | null;
+  unavailableReason?: string;
+};
 
 export type PaymentMethod = "cash" | "gcash";
 
