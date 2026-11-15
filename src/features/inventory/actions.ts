@@ -44,7 +44,10 @@ export async function addInventoryItem(_prev: InventoryFormState, formData: Form
   if (!(await canManageStore())) return { error: "You don't have permission to add items." };
 
   const parsed = itemFormSchema.safeParse(
-    Object.fromEntries(["name", "category", "unit", "unitCost", "minimum"].map((k) => [k, field(formData, k)])),
+    {
+      ...Object.fromEntries(["name", "category", "unit", "unitCost", "minimum"].map((k) => [k, field(formData, k)])),
+      homemade: formData.get("homemade"),
+    },
   );
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
 

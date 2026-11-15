@@ -92,3 +92,10 @@ test("shared ingredients are added up across the order before checking stock", (
   const store = fresh();
   assert.deepEqual(store.consume([{ productId: "burger", quantity: 10 }, { productId: "burger", quantity: 10 }], "#1046", "Jun", day), { ok: false, shortOf: "Beef Patties" });
 });
+
+test("a batch of homemade patties is logged as made in-house, not bought", () => {
+  const store = createInventoryStore({ items: [{ ...beef, homemade: true }], recipes: {} });
+  store.recordMovement({ type: "stock-in", itemId: "beef", quantity: 40, unitCost: 3000, supplier: "Palengke", date: day }, "Maria Reyes");
+  assert.equal(store.movements()[0].supplier, "Made in-house");
+  assert.equal(store.items()[0].quantity, 58);
+});

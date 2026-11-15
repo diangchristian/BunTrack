@@ -127,7 +127,10 @@ export function InventoryManager({
                     <TableRow key={item.id}>
                       <TableCell>
                         <p className="font-semibold">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{item.category}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.category}
+                          {item.homemade && " · Made in-house"}
+                        </p>
                       </TableCell>
                       <TableCell>
                         <p className={cn("font-semibold tabular-nums", s === "out" ? "text-destructive" : s === "low" && "text-warning")}>

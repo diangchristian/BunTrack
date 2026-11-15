@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { movementFormSchema } from "./schemas";
+import { itemFormSchema, movementFormSchema } from "./schemas";
 
 const stockIn = { type: "stock-in", itemId: "buns", quantity: "50", unitCost: "8.50", reference: " OR-204 ", supplier: "Bakery on Rizal St.", note: "", date: "2026-11-16" };
 
@@ -45,4 +45,10 @@ test("the date must be a real day, not in the future", () => {
 test("market buys have no receipt: the reference is optional", () => {
   const result = movementFormSchema("pcs").safeParse({ ...stockIn, reference: "", supplier: "Palengke" });
   assert.ok(result.success);
+});
+
+test("Add item: the made-in-house checkbox is optional", () => {
+  const base = { name: "Beef Patties", category: "Meat", unit: "pcs", unitCost: "30.00", minimum: "40" };
+  assert.equal(itemFormSchema.parse({ ...base, homemade: "on" }).homemade, true);
+  assert.equal(itemFormSchema.parse({ ...base, homemade: null }).homemade, false);
 });

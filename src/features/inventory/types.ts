@@ -33,8 +33,10 @@ export type InventoryItem = {
   quantity: number;
   /** Reorder point, in the small unit. */
   minimum: number;
-  /** Centavos per big unit (per kg, per L, per pc). Latest purchase price. */
+  /** Centavos per big unit (per kg, per L, per pc). Latest purchase price, or cost to make. */
   unitCost: number;
+  /** Made in the shop (e.g. patties), so Stock In records a batch made, not a purchase. */
+  homemade?: boolean;
 };
 
 /** How much of one inventory item a single serving uses, in the item's small unit. */

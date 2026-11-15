@@ -58,7 +58,17 @@ export function createInventoryStore(seed: { items: InventoryItem[]; recipes: Re
 
       // Latest purchase price becomes the unit cost, so every recipe using it is re-costed.
       setQuantity(item.id, item.quantity + change, input.type === "stock-in" ? input.unitCost : undefined);
-      log([{ ...input, change, unitCost: input.type === "stock-in" ? input.unitCost : undefined, by }]);
+      const homemadeBatch = input.type === "stock-in" && item.homemade;
+      log([
+        {
+          ...input,
+          change,
+          unitCost: input.type === "stock-in" ? input.unitCost : undefined,
+          supplier: homemadeBatch ? "Made in-house" : input.supplier,
+          reference: homemadeBatch ? undefined : input.reference,
+          by,
+        },
+      ]);
       return { ok: true };
     },
 
@@ -96,8 +106,8 @@ const item = (id: string, name: string, category: InventoryItem["category"], uni
 const sampleItems: InventoryItem[] = [
   // Figma Inventory screen (quantities in g / ml / pcs; unit cost per kg / L / pc)
   item("burger-buns", "Burger Buns", "Bakery", "pcs", 35, 50, 850),
-  item("beef-patties", "Beef Patties", "Meat", "pcs", 18, 40, 3200),
-  item("chicken-patties", "Chicken Patties", "Meat", "pcs", 64, 30, 2600),
+  { ...item("beef-patties", "Beef Patties", "Meat", "pcs", 18, 40, 3200), homemade: true },
+  { ...item("chicken-patties", "Chicken Patties", "Meat", "pcs", 64, 30, 2600), homemade: true },
   item("bacon-strips", "Bacon Strips", "Meat", "pcs", 40, 20, 1500),
   item("cheese-slices", "Cheese Slices", "Dairy", "pcs", 42, 60, 720),
   item("cheese-sauce", "Cheese Sauce", "Dairy", "L", 2000, 1000, 28000),

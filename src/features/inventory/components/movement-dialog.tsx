@@ -74,6 +74,7 @@ function MovementForm({
   const [quantity, setQuantity] = useState("");
   const [unitCost, setUnitCost] = useState(item ? (item.unitCost / 100).toFixed(2) : "");
   const errors = state.fieldErrors ?? {};
+  const batch = type === "stock-in" && item?.homemade; // made in the shop, not bought
 
   // Live preview of what saving will do. The server re-validates everything.
   const amount = item && /^\d+(\.\d+)?$/.test(quantity.trim()) ? Math.round(Number(quantity) * units[item.unit].factor) : null;
@@ -89,6 +90,7 @@ function MovementForm({
           {item && ` · ${item.name}`}
         </DialogTitle>
         <DialogDescription>
+          {batch && "Record a batch made in the shop. "}
           {item
             ? `Current stock: ${formatQuantity(item.quantity, item.unit)} · Min. ${formatQuantity(item.minimum, item.unit)}`
             : "Pick the item this is for."}
@@ -135,7 +137,7 @@ function MovementForm({
         </Select>
       </Field>
 
-      {type === "stock-in" && (
+      {type === "stock-in" && !batch && (
         <Field label="Bought from" htmlFor="supplier" error={errors.supplier?.[0]}>
           <Input
             id="supplier"
@@ -157,14 +159,18 @@ function MovementForm({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Field
-          label={`${type === "stock-in" ? "Quantity received" : type === "adjustment" ? "Counted on hand" : "Quantity wasted"}${item ? ` (${units[item.unit].label})` : ""}`}
+          label={`${batch ? "Quantity made" : type === "stock-in" ? "Quantity received" : type === "adjustment" ? "Counted on hand" : "Quantity wasted"}${item ? ` (${units[item.unit].label})` : ""}`}
           htmlFor="quantity"
           error={errors.quantity?.[0]}
         >
           <Input id="quantity" name="quantity" inputMode="decimal" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder={item?.unit === "pcs" ? "50" : "2.5"} required className="h-10 tabular-nums" />
         </Field>
         {type === "stock-in" ? (
-          <Field label={`Unit cost (₱${item ? ` / ${units[item.unit].label === "pcs" ? "pc" : units[item.unit].label}` : ""})`} htmlFor="unitCost" error={errors.unitCost?.[0]}>
+          <Field
+            label={`${batch ? "Cost to make" : "Unit cost"} (₱${item ? ` / ${units[item.unit].label === "pcs" ? "pc" : units[item.unit].label}` : ""})`}
+            htmlFor="unitCost"
+            error={errors.unitCost?.[0]}
+          >
             <Input id="unitCost" name="unitCost" inputMode="decimal" value={unitCost} onChange={(e) => setUnitCost(e.target.value)} required className="h-10 tabular-nums" />
           </Field>
         ) : (
@@ -173,7 +179,7 @@ function MovementForm({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {type === "stock-in" ? (
+        {batch ? null : type === "stock-in" ? (
           <Field label="Receipt no. (optional)" htmlFor="reference" error={errors.reference?.[0]}>
             <Input id="reference" name="reference" placeholder="Leave blank for market buys" maxLength={40} className="h-10" />
           </Field>
@@ -182,7 +188,7 @@ function MovementForm({
             <Input id="note" name="note" placeholder={type === "waste" ? "e.g. Expired, spoiled" : "e.g. Weekly count"} maxLength={120} aria-invalid={!!errors.note} className="h-10" />
           </Field>
         )}
-        <Field label={type === "stock-in" ? "Date received" : "Date"} htmlFor="date" error={errors.date?.[0]}>
+        <Field label={batch ? "Date made" : type === "stock-in" ? "Date received" : "Date"} htmlFor="date" error={errors.date?.[0]}>
           <Input id="date" name="date" type="date" defaultValue={manilaDate()} max={manilaDate()} required className="h-10" />
         </Field>
       </div>

@@ -63,6 +63,8 @@ export const itemFormSchema = z.object({
     }
     return cost;
   }),
+  // An unchecked checkbox is simply missing from the form data.
+  homemade: z.literal("on").nullish().transform((v) => v === "on"),
   /** Reorder point in the big unit (kg, L, pcs); converted by the action. */
   minimum: z.string().trim().regex(/^\d{1,6}(\.\d{1,3})?$/, { error: "Enter a number, like 3" }).transform(Number),
 });

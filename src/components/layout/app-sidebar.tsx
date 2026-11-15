@@ -13,7 +13,6 @@ import {
   Receipt,
   Settings,
   ShoppingCart,
-  Truck,
   Users,
 } from "lucide-react";
 
@@ -45,7 +44,6 @@ const navGroups = [
       { title: "Products", href: "/products", icon: Package },
       { title: "Inventory", href: "/inventory", icon: Boxes },
       { title: "Costing & Pricing", href: "/costing", icon: Calculator },
-      { title: "Suppliers", href: "/suppliers", icon: Truck },
     ],
   },
   {

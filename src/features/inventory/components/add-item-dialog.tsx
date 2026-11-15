@@ -80,6 +80,11 @@ function AddItemForm({ onDone }: { onDone: () => void }) {
         </Field>
       </div>
 
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" name="homemade" className="size-4 accent-primary" />
+        Made in-house (e.g. patties): Stock In records a batch made, with the cost to make one
+      </label>
+
       {state.error && (
         <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive">
           {state.error}
