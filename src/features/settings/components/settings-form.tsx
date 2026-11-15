@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Check } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,11 @@ import { saveSettings, type SettingsFormState } from "../actions";
 import type { Settings } from "../schemas";
 
 export function SettingsForm({ settings }: { settings: Settings }) {
-  const [state, formAction, saving] = useActionState(saveSettings, {} as SettingsFormState);
+  const [state, formAction, saving] = useActionState(async (prev: SettingsFormState, formData: FormData) => {
+    const result = await saveSettings(prev, formData);
+    if (result.ok) toast.success("Settings saved");
+    return result;
+  }, {});
   // Live receipt preview while typing; the server validates on save.
   const [draft, setDraft] = useState(settings);
   const errors = state.fieldErrors ?? {};
@@ -54,11 +59,6 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         {state.error && (
           <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive">
             {state.error}
-          </p>
-        )}
-        {state.ok && !saving && JSON.stringify(draft) === JSON.stringify(settings) && (
-          <p role="status" className="rounded-md bg-success-soft px-3 py-2 text-sm text-success-strong">
-            Settings saved.
           </p>
         )}
         <div className="flex gap-2">

@@ -3,6 +3,7 @@
 import { keepValuesOnSubmit } from "@/lib/forms";
 import { useActionState, useState } from "react";
 import { AlertTriangle, Check } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -65,7 +66,11 @@ function MovementForm({
 }) {
   const [state, formAction, saving] = useActionState(async (prev: InventoryFormState, formData: FormData) => {
     const result = await recordStockMovement(prev, formData);
-    if (result.ok) onDone();
+    if (result.ok) {
+      const what = { "stock-in": batch ? "Batch recorded" : "Stock In recorded", adjustment: "Stock adjusted", waste: "Waste recorded" }[type];
+      toast.success(`${what}: ${item?.name ?? "item"}`);
+      onDone();
+    }
     return result;
   }, {});
   const [type, setType] = useState<FormType>(initial.type);

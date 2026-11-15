@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { History, Pencil, Plus, X } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +47,10 @@ export function RecipeBreakdown({
     setError(undefined);
     startSave(async () => {
       const result = await saveRecipe(productId, draft);
-      if (result.ok) setDraft(null);
+      if (result.ok) {
+        setDraft(null);
+        toast.success("Recipe saved");
+      }
       else setError(result.error);
     });
   }

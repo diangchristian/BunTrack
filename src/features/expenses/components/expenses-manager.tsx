@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,8 @@ export function ExpensesManager({ expenses }: { expenses: Expense[] }) {
     setError(undefined);
     startDelete(async () => {
       const result = await deleteExpense(id);
-      if (!result.ok) setError(result.error);
+      if (result.ok) toast.success("Expense deleted");
+      else setError(result.error);
       setConfirmId(undefined);
     });
   }

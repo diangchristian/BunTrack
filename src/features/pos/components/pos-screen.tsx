@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 import type { Category } from "@/features/categories/types";
 import type { Settings } from "@/features/settings/schemas";
@@ -32,6 +33,7 @@ export function PosScreen({ menu, categories, cashierName, shop }: { menu: MenuP
   }
 
   function handlePaid(paid: Receipt) {
+    toast.success(`Order ${paid.orderNumber} completed`);
     setPaying(false);
     setReceipt(paid);
     setQuantities(new Map());

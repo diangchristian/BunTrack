@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Check } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -31,7 +32,10 @@ export function ExpenseDialog({ expense, onClose }: { expense: Expense | null; o
 function ExpenseForm({ expense, onDone }: { expense: Expense | null; onDone: () => void }) {
   const [state, formAction, saving] = useActionState(async (prev: ExpenseFormState, formData: FormData) => {
     const result = await saveExpense(prev, formData);
-    if (result.ok) onDone();
+    if (result.ok) {
+      toast.success(expense ? "Expense updated" : "Expense recorded");
+      onDone();
+    }
     return result;
   }, {});
   const [paidVia, setPaidVia] = useState(expense?.paidVia ?? "cash");

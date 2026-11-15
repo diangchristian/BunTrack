@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { Check, Pencil, Plus, Search, UserCheck, UserX } from "lucide-react";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,8 @@ export function UsersManager({ users, currentUserId }: { users: User[]; currentU
     setError(undefined);
     startSave(async () => {
       const result = await setUserActive(user.id, !user.active);
-      if (!result.ok) setError(result.error);
+      if (result.ok) toast.success(`${user.name} ${user.active ? "deactivated" : "reactivated"}`);
+      else setError(result.error);
       setConfirmId(undefined);
     });
   }
@@ -142,7 +144,10 @@ const roleItems = roles.map((r) => ({ value: r.id, label: r.id }));
 function UserDialog({ user, isSelf, onClose }: { user: User | null; isSelf: boolean; onClose: () => void }) {
   const [state, formAction, saving] = useActionState(async (prev: UserFormState, formData: FormData) => {
     const result = await saveUser(prev, formData);
-    if (result.ok) onClose();
+    if (result.ok) {
+      toast.success(user ? "Account updated" : `Account added: ${formData.get("name")}`);
+      onClose();
+    }
     return result;
   }, {});
   const errors = state.fieldErrors ?? {};

@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Check, Droplet, Hash, Scale, type LucideIcon } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -36,7 +37,10 @@ export function AddItemDialog({ open, onClose }: { open: boolean; onClose: () =>
 function AddItemForm({ onDone }: { onDone: () => void }) {
   const [state, formAction, saving] = useActionState(async (prev: InventoryFormState, formData: FormData) => {
     const result = await addInventoryItem(prev, formData);
-    if (result.ok) onDone();
+    if (result.ok) {
+      toast.success(`Item added: ${formData.get("name")}`);
+      onDone();
+    }
     return result;
   }, {});
   const [unit, setUnit] = useState<UnitId>("pcs");

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { ArrowDown, ArrowUp, Check, Lock, Pencil, Plus, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,11 +17,14 @@ export function CategoryManager({ categories, productCounts }: { categories: Cat
   const [error, setError] = useState<string>();
   const [pending, start] = useTransition();
 
-  function run(action: () => Promise<{ ok: boolean; error?: string }>, after?: () => void) {
+  function run(action: () => Promise<{ ok: boolean; error?: string }>, after?: () => void, done?: string) {
     setError(undefined);
     start(async () => {
       const result = await action();
-      if (result.ok) after?.();
+      if (result.ok) {
+        after?.();
+        if (done) toast.success(done);
+      }
       else setError(result.error);
     });
   }
@@ -31,7 +35,7 @@ export function CategoryManager({ categories, productCounts }: { categories: Cat
       setTimeout(() => setConfirmId((current) => (current === id ? undefined : current)), 4000);
       return;
     }
-    run(() => deleteCategory(id), () => setConfirmId(undefined));
+    run(() => deleteCategory(id), () => setConfirmId(undefined), `Category deleted: ${categories.find((c) => c.id === id)?.label}`);
   }
 
   return (
@@ -52,7 +56,7 @@ export function CategoryManager({ categories, productCounts }: { categories: Cat
                   className="flex flex-1 items-center gap-2"
                   onSubmit={(e) => {
                     e.preventDefault();
-                    run(() => renameCategory(c.id, editing.label), () => setEditing(undefined));
+                    run(() => renameCategory(c.id, editing.label), () => setEditing(undefined), `Category renamed to ${editing.label.trim()}`);
                   }}
                 >
                   <Input
@@ -122,7 +126,7 @@ export function CategoryManager({ categories, productCounts }: { categories: Cat
         className="flex gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          run(() => addCategory(newLabel), () => setNewLabel(""));
+          run(() => addCategory(newLabel), () => setNewLabel(""), `Category added: ${newLabel.trim()}`);
         }}
       >
         <Input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="e.g. Rice Meals" maxLength={30} aria-label="New category name" className="h-10 flex-1" />

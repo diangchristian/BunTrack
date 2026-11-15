@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { Archive, Calculator, Check, ImagePlus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -60,7 +61,10 @@ function ProductForm({ product, categories, onDone }: { product: CostedProduct |
   const [state, formAction, saving] = useActionState(async (prev: ProductFormState, formData: FormData) => {
     setArchiveError(undefined); // only the latest attempt's error is shown
     const result = await saveProduct(prev, formData);
-    if (result.ok) onDone();
+    if (result.ok) {
+      toast.success(product ? `Saved ${formData.get("name")}` : `Product added: ${formData.get("name")}`);
+      onDone();
+    }
     return result;
   }, {});
   const [price, setPrice] = useState(product ? centavosToInput(product.price) : "");
@@ -97,8 +101,10 @@ function ProductForm({ product, categories, onDone }: { product: CostedProduct |
     setArchiveError(undefined);
     startArchive(async () => {
       const result = await archiveProduct(product.id);
-      if (result.ok) onDone();
-      else setArchiveError(result.error);
+      if (result.ok) {
+        toast.success(`Archived ${product.name}`);
+        onDone();
+      } else setArchiveError(result.error);
     });
   }
 

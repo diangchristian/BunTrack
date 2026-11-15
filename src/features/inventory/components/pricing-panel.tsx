@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Check } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,7 +48,8 @@ export function PricingPanel({
     setMessage(undefined);
     startSave(async () => {
       const result = await updateProductPrice(productId, priceInput);
-      setMessage(result.ok ? { ok: true, text: `Saved. The POS now sells ${productName} at ${formatCentavos(priceC!)}.` } : { ok: false, text: result.error! });
+      if (result.ok) toast.success(`Price saved: ${productName} now ${formatCentavos(priceC!)}`);
+      setMessage(result.ok ? undefined : { ok: false, text: result.error! });
     });
   }
 
