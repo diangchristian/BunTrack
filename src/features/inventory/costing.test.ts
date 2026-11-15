@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { formatQuantity, recipeCost, roundForMenu, servingsLeft, stockStatus, suggestedPrice } from "./costing";
+import { costFromPurchase, formatQuantity, recipeCost, roundForMenu, servingsLeft, stockStatus, suggestedPrice } from "./costing";
 import type { InventoryItem } from "./types";
 
 const item = (id: string, unit: InventoryItem["unit"], quantity: number, unitCost: number): InventoryItem => ({
@@ -64,4 +64,10 @@ test("quantities read naturally: small amounts in g/ml, stock in kg/L", () => {
   assert.equal(formatQuantity(15, "L", "serving"), "15 ml");
   assert.equal(formatQuantity(18, "pcs"), "18 pcs");
   assert.equal(formatQuantity(1, "pcs", "serving"), "1 pc");
+});
+
+test("cost per unit comes from what was paid: ₱150 for 10 hotdogs, ₱450 for a 2.5 kg bag of fries", () => {
+  assert.equal(costFromPurchase(15000, 10, "pcs"), 1500); // ₱15.00 per pc
+  assert.equal(costFromPurchase(45000, 2500, "kg"), 18000); // ₱180.00 per kg
+  assert.equal(costFromPurchase(10000, 3, "pcs"), 3333); // ₱33.33, rounded to the centavo
 });

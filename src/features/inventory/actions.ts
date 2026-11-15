@@ -7,7 +7,7 @@ import { formText } from "@/lib/forms";
 import { logActivity } from "@/features/activity/log";
 import { canUseStore, getCurrentUser } from "@/features/auth/queries";
 import { productStore } from "@/features/products/store";
-import { itemFormSchema, movementFormSchema } from "./schemas";
+import { itemFormSchema, movementFormSchema, openingStockIn } from "./schemas";
 import { inventoryStore } from "./store";
 import { formatQuantity } from "./costing";
 import { units } from "./types";
@@ -21,8 +21,9 @@ export async function recordStockMovement(_prev: InventoryFormState, formData: F
   const item = inventoryStore.items().find((i) => i.id === formText(formData, "itemId"));
   if (!item) return { fieldErrors: { itemId: ["Pick an item"] } };
 
-  const parsed = movementFormSchema(item.unit).safeParse(
-    Object.fromEntries(["type", "itemId", "quantity", "unitCost", "reference", "supplier", "note", "date"].map((k) => [k, formText(formData, k)])),
+  // Homemade items are counted per piece made, never by the pack.
+  const parsed = movementFormSchema(item.unit, item.homemade ? undefined : item.pack?.size).safeParse(
+    Object.fromEntries(["type", "itemId", "quantity", "totalPaid", "reference", "supplier", "note", "date"].map((k) => [k, formText(formData, k)])),
   );
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
 
@@ -46,21 +47,57 @@ export async function recordStockMovement(_prev: InventoryFormState, formData: F
   return { ok: true };
 }
 
+/** Add item, optionally with what's on hand now (saved as its first Stock In). */
 export async function addInventoryItem(_prev: InventoryFormState, formData: FormData): Promise<InventoryFormState> {
   if (!(await canUseStore())) return { error: "You don't have permission to add items." };
 
-  const parsed = itemFormSchema.safeParse(
-    {
-      ...Object.fromEntries(["name", "category", "unit", "unitCost", "minimum"].map((k) => [k, formText(formData, k)])),
-      homemade: formData.get("homemade"),
-    },
-  );
-  if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
+  const parsed = itemFormSchema.safeParse({
+    ...Object.fromEntries(["name", "category", "unit", "minimum", "packName", "packSize"].map((k) => [k, formText(formData, k)])),
+    homemade: formData.get("homemade"),
+  });
 
+  // "On hand now" is checked before anything is saved, so a mistake there doesn't leave half an item.
+  // Its rules depend on the unit and pack size, so it can only be checked once those parse.
+  const openingQuantity = formText(formData, "openingQuantity").trim();
+  const openingTotal = formText(formData, "openingTotal").trim();
+  const openingErrors: Record<string, string[] | undefined> = {};
+  let opening: { quantity: number; unitCost?: number; date: string } | undefined;
+  if (!openingQuantity && openingTotal) openingErrors.openingQuantity = ["Enter how much you have, or clear the total"];
+  if (openingQuantity && parsed.success) {
+    const result = openingStockIn(parsed.data.unit, parsed.data.homemade ? undefined : parsed.data.pack?.size, openingQuantity, openingTotal);
+    if (result.success) opening = result.data;
+    else {
+      // Keyed by form field; "totalPaid" isn't in the parsed output type, so widen it.
+      const errors: Record<string, string[] | undefined> = z.flattenError(result.error).fieldErrors;
+      Object.assign(openingErrors, { openingQuantity: errors.quantity, openingTotal: errors.totalPaid });
+    }
+  }
+  if (!parsed.success || Object.values(openingErrors).some(Boolean)) {
+    return { fieldErrors: { ...(parsed.success ? {} : z.flattenError(parsed.error).fieldErrors), ...openingErrors } };
+  }
   const { minimum, ...values } = parsed.data;
-  // Starts at 0 on hand; record a Stock In to add the first delivery (so it's in the history).
-  inventoryStore.addItem({ ...values, quantity: 0, minimum: Math.round(minimum * units[values.unit].factor) });
+
+  // No cost until the first Stock In: cost always comes from what was actually paid.
+  const item = inventoryStore.addItem({ ...values, quantity: 0, unitCost: 0, minimum: Math.round(minimum * units[values.unit].factor) });
   await logActivity({ module: "Inventory", action: "Item added", record: values.name, change: values.category });
+
+  if (opening) {
+    const { name } = await getCurrentUser();
+    const saved = inventoryStore.recordMovement(
+      { type: "stock-in", itemId: item.id, quantity: opening.quantity, unitCost: opening.unitCost, note: "On hand when added", date: opening.date },
+      name,
+    );
+    if (!saved.ok) {
+      refresh();
+      return { error: `${values.name} was added, but its stock on hand wasn't saved (${saved.error}). Record it with Stock In.` };
+    }
+    await logActivity({
+      module: "Inventory",
+      action: values.homemade ? "Batch made" : "Stock In",
+      record: values.name,
+      change: `0 → ${formatQuantity(opening.quantity, values.unit)} · on hand when added`,
+    });
+  }
   refresh();
   return { ok: true };
 }

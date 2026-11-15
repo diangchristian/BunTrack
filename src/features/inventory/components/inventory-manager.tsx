@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCentavos } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { formatQuantity, stockStatus, stockValue } from "../costing";
+import { formatQuantity, perUnitLabel, stockStatus, stockValue } from "../costing";
 import { itemCategories, units, type InventoryItem, type MovementType, type StockMovement } from "../types";
 import { AddItemDialog } from "./add-item-dialog";
 import { MovementDialog } from "./movement-dialog";
@@ -120,7 +120,7 @@ export function InventoryManager({
                 )}
                 {visible.map((item) => {
                   const s = stockStatus(item);
-                  const unitLabel = item.unit === "pcs" ? "pc" : units[item.unit].label;
+                  const unitLabel = perUnitLabel(item.unit);
                   // The bar is full at twice the reorder point, like the Figma design.
                   const fill = item.minimum ? Math.min(1, item.quantity / (item.minimum * 2)) : item.quantity > 0 ? 1 : 0;
                   return (
@@ -130,6 +130,7 @@ export function InventoryManager({
                         <p className="text-xs text-muted-foreground">
                           {item.category}
                           {item.homemade && " · Made in-house"}
+                          {item.pack && ` · ${item.pack.name} of ${formatQuantity(item.pack.size, item.unit)}`}
                         </p>
                       </TableCell>
                       <TableCell>
@@ -142,7 +143,7 @@ export function InventoryManager({
                       </TableCell>
                       <TableCell className="hidden text-muted-foreground md:table-cell">{formatQuantity(item.minimum, item.unit)}</TableCell>
                       <TableCell className="hidden text-right text-muted-foreground tabular-nums lg:table-cell">
-                        {formatCentavos(item.unitCost)} / {unitLabel}
+                        {item.unitCost ? `${formatCentavos(item.unitCost)} / ${unitLabel}` : "No cost yet"}
                       </TableCell>
                       <TableCell className="hidden text-right font-semibold tabular-nums sm:table-cell">
                         {formatCentavos(Math.round(stockValue(item)))}

@@ -1,20 +1,44 @@
 import { z } from "zod";
 
 import { parsePesos } from "@/features/products/schemas";
-import { isRealPastDate } from "@/lib/format";
+import { isRealPastDate, manilaDate } from "@/lib/format";
+import { costFromPurchase } from "./costing";
 import { itemCategories, units, type UnitId } from "./types";
 
 const text = (max: number) => z.string().trim().max(max, { error: `Keep it under ${max} characters` });
 
-/** Parses the Stock In / Adjustment / Waste form for an item measured in `unit`. */
-export function movementFormSchema(unit: UnitId) {
-  const { factor, label } = units[unit];
+/**
+ * Typed amount → small units (pc, g, ml), or null if it isn't valid. With `packSize` the text is
+ * a number of whole packs. Shared by the server checks and the live previews so they always agree.
+ */
+export function stockAmount(text: string, unit: UnitId, packSize?: number) {
+  const value = text.trim();
+  if (packSize !== undefined) return /^\d{1,6}$/.test(value) ? Number(value) * packSize : null;
+  const pattern = unit === "pcs" ? /^\d{1,6}$/ : /^\d{1,6}(\.\d{1,3})?$/;
+  return pattern.test(value) ? Math.round(Number(value) * units[unit].factor) : null;
+}
+
+/** "Each pack holds" text → small units, or null (pieces are whole; up to 5 digits). */
+export function parsePackSize(text: string, unit: UnitId) {
+  const value = text.trim();
+  const pattern = unit === "pcs" ? /^\d{1,5}$/ : /^\d{1,5}(\.\d{1,3})?$/;
+  const size = pattern.test(value) ? Math.round(Number(value) * units[unit].factor) : 0;
+  return size > 0 ? size : null;
+}
+
+/**
+ * Parses the Stock In / Adjustment / Waste form for an item measured in `unit`.
+ * Stock In takes what's on the receipt: how many (packs, if the item is bought by the pack of
+ * `packSize` small units) and the total paid. The cost per pc / kg / L is worked out here.
+ */
+export function movementFormSchema(unit: UnitId, packSize?: number) {
+  const { label } = units[unit];
   return z
     .object({
       type: z.enum(["stock-in", "adjustment", "waste"]),
       itemId: z.string().min(1, { error: "Pick an item" }),
       quantity: z.string().trim(),
-      unitCost: z.string(),
+      totalPaid: z.string(),
       reference: text(40),
       supplier: text(60),
       note: text(120),
@@ -26,39 +50,64 @@ export function movementFormSchema(unit: UnitId) {
     })
     .transform((v, ctx) => {
       const issue = (path: string, message: string) => ctx.addIssue({ code: "custom", path: [path], message });
-      const decimals = unit === "pcs" ? "" : "(\\.\\d{1,3})?";
-      const amount = new RegExp(`^\\d{1,6}${decimals}$`).test(v.quantity) ? Math.round(Number(v.quantity) * factor) : null;
+      const byPack = v.type === "stock-in" && packSize !== undefined;
+      const amount = stockAmount(v.quantity, unit, byPack ? packSize : undefined);
 
-      if (amount === null) issue("quantity", unit === "pcs" ? "Enter whole pieces, like 50" : `Enter ${label}, like 2.5`);
+      if (amount === null) issue("quantity", byPack ? "Enter whole packs, like 3" : unit === "pcs" ? "Enter whole pieces, like 50" : `Enter ${label}, like 2.5`);
       else if (amount === 0 && v.type !== "adjustment") issue("quantity", "Enter more than 0");
 
-      const unitCost = v.type === "stock-in" ? parsePesos(v.unitCost) : undefined;
+      let unitCost: number | undefined;
       if (v.type === "stock-in") {
         // No reference check: market and store buys usually have no invoice or receipt number.
-        if (unitCost === null) issue("unitCost", "Enter the price paid per unit, like 33.50");
+        const total = parsePesos(v.totalPaid);
+        if (total === null) issue("totalPaid", "Enter the total you paid, like 450");
+        // Free stock (₱0) is fine, but it says nothing about the price, so the cost stays as it was.
+        else if (total > 0 && amount) unitCost = costFromPurchase(total, amount, unit);
       } else if (!v.note) {
         issue("note", "Say why, e.g. weekly count or spoiled");
       }
 
       if (ctx.issues.length) return z.NEVER;
-      return { ...v, quantity: amount!, unitCost: unitCost ?? undefined };
+      const { type, itemId, reference, supplier, note, date } = v;
+      return { type, itemId, reference, supplier, note, date, quantity: amount!, unitCost };
     });
 }
 
-export const itemFormSchema = z.object({
-  name: z.string().trim().min(1, { error: "Enter a name" }).max(60),
-  category: z.enum(itemCategories, { error: "Pick a category" }),
-  unit: z.enum(Object.keys(units) as [UnitId, ...UnitId[]], { error: "Pick a unit" }),
-  unitCost: z.string().transform((v, ctx) => {
-    const cost = parsePesos(v);
-    if (cost === null) {
-      ctx.addIssue({ code: "custom", message: "Enter the price per unit, like 120.00" });
+/** The live "= 30 pcs · ₱15.00 per pc" line for a Stock In, using the same rules as the server. */
+export function previewStockIn(unit: UnitId, packSize: number | undefined, quantity: string, totalPaid: string) {
+  const amount = stockAmount(quantity, unit, packSize);
+  const total = parsePesos(totalPaid);
+  return { amount, unitCost: amount && total ? costFromPurchase(total, amount, unit) : undefined };
+}
+
+/** Builds a Stock In for the "on hand now" part of Add item (validated like any other Stock In). */
+export function openingStockIn(unit: UnitId, packSize: number | undefined, quantity: string, totalPaid: string) {
+  return movementFormSchema(unit, packSize).safeParse({
+    type: "stock-in", itemId: "new", quantity, totalPaid, reference: "", supplier: "", note: "", date: manilaDate(),
+  });
+}
+
+/** Add item: describes the item only. Its cost comes from what you pay at Stock In. */
+export const itemFormSchema = z
+  .object({
+    name: z.string().trim().min(1, { error: "Enter a name" }).max(60),
+    category: z.enum(itemCategories, { error: "Pick a category" }),
+    unit: z.enum(Object.keys(units) as [UnitId, ...UnitId[]], { error: "Pick how you measure it" }),
+    // An unchecked checkbox is simply missing from the form data.
+    homemade: z.literal("on").nullish().transform((v) => v === "on"),
+    /** Reorder point in the big unit (kg, L, pcs); converted by the action. */
+    minimum: z.string().trim().regex(/^\d{1,6}(\.\d{1,3})?$/, { error: "Enter a number, like 3" }).transform(Number),
+    /** Optional "bought as": e.g. a "pack" of 10 pcs, a "bag" of 1 kg. Size is in the big unit. */
+    packName: z.string().trim().toLowerCase().max(15).optional(),
+    packSize: z.string().trim().optional(),
+  })
+  .transform(({ packName, packSize, ...values }, ctx) => {
+    // Homemade items are made in batches, never bought by the pack.
+    if (!packSize || values.homemade) return { ...values, pack: undefined };
+    const size = parsePackSize(packSize, values.unit);
+    if (size === null) {
+      ctx.addIssue({ code: "custom", path: ["packSize"], message: values.unit === "pcs" ? "Enter whole pieces, like 10" : "Enter an amount, like 1" });
       return z.NEVER;
     }
-    return cost;
-  }),
-  // An unchecked checkbox is simply missing from the form data.
-  homemade: z.literal("on").nullish().transform((v) => v === "on"),
-  /** Reorder point in the big unit (kg, L, pcs); converted by the action. */
-  minimum: z.string().trim().regex(/^\d{1,6}(\.\d{1,3})?$/, { error: "Enter a number, like 3" }).transform(Number),
-});
+    return { ...values, pack: { name: packName || "pack", size } };
+  });

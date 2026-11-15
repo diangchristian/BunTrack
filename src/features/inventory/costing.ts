@@ -59,3 +59,11 @@ export function formatQuantity(quantity: number, unit: InventoryItem["unit"], mo
 export function stockValue(item: Pick<InventoryItem, "quantity" | "unitCost" | "unit">) {
   return (item.quantity * item.unitCost) / units[item.unit].factor;
 }
+
+/** What one pc / kg / L cost, in centavos, from the total paid for `quantity` small units (pc, g, ml). */
+export function costFromPurchase(totalPaid: number, quantity: number, unit: InventoryItem["unit"]) {
+  return Math.round((totalPaid * units[unit].factor) / quantity);
+}
+
+/** "pc" / "kg" / "L": the word after "per", as in "₱15.00 per pc". */
+export const perUnitLabel = (unit: InventoryItem["unit"]) => (unit === "pcs" ? "pc" : units[unit].label);

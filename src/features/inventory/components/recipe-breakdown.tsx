@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCentavos } from "@/lib/format";
 import { saveRecipe } from "../actions";
-import { formatQuantity, lineCost } from "../costing";
+import { formatQuantity, lineCost, perUnitLabel } from "../costing";
 import { units, type InventoryItem, type RecipeLine } from "../types";
 
 /** Ingredient breakdown for one product, with an edit mode for its recipe. */
@@ -130,7 +130,7 @@ export function RecipeBreakdown({
                   )}
                 </TableCell>
                 <TableCell className="hidden text-muted-foreground tabular-nums sm:table-cell">
-                  {formatCentavos(item.unitCost)} / {item.unit === "pcs" ? "pc" : units[item.unit].label}
+                  {item.unitCost ? `${formatCentavos(item.unitCost)} / ${perUnitLabel(item.unit)}` : "No cost yet (do a Stock In)"}
                 </TableCell>
                 <TableCell className="text-right font-semibold tabular-nums">{formatCentavos(Math.round(cost))}</TableCell>
                 <TableCell className="hidden md:table-cell">
