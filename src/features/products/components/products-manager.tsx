@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCentavos } from "@/lib/format";
 import { productMargin } from "../costing";
-import { categories, categoryLabel, type Product } from "../types";
+import { categories, categoryLabel, isOnSale, isSoldOut, type Product } from "../types";
 import { ProductDrawer } from "./product-drawer";
 import { ProductImage } from "./product-image";
 
@@ -32,7 +32,7 @@ export function ProductsManager({ products }: { products: Product[] }) {
   const visible = products.filter(
     (p) =>
       (category === "all" || p.category === category) &&
-      (status === "all" || (status === "available") === p.available) &&
+      (status === "all" || (status === "available") === isOnSale(p)) &&
       (p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search)),
   );
 
@@ -58,7 +58,7 @@ export function ProductsManager({ products }: { products: Product[] }) {
               <TableHead className="text-xs">Product</TableHead>
               <TableHead className="hidden text-xs md:table-cell">Category</TableHead>
               <TableHead className="text-right text-xs">Selling Price</TableHead>
-              <TableHead className="hidden text-right text-xs lg:table-cell">Prod. Cost</TableHead>
+              <TableHead className="hidden text-right text-xs lg:table-cell">Cost</TableHead>
               <TableHead className="hidden text-right text-xs sm:table-cell">Est. Profit</TableHead>
               <TableHead className="hidden text-xs sm:table-cell">Status</TableHead>
               <TableHead className="w-16 text-right text-xs">
@@ -99,7 +99,12 @@ export function ProductsManager({ products }: { products: Product[] }) {
                     <p className="text-xs text-muted-foreground">{margin.marginPercent}% margin</p>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    <Badge variant={product.available ? "success" : "danger"}>{product.available ? "Available" : "Unavailable"}</Badge>
+                    {isSoldOut(product) ? (
+                      <Badge variant="warning">Sold out</Badge>
+                    ) : (
+                      <Badge variant={product.available ? "success" : "danger"}>{product.available ? "Available" : "Unavailable"}</Badge>
+                    )}
+                    {product.stock !== null && <p className="mt-1 text-xs text-muted-foreground">{product.stock} in stock</p>}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" onClick={() => setEditing(product)} aria-label={`Edit ${product.name}`}>

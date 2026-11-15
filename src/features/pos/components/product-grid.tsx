@@ -82,7 +82,7 @@ export function ProductGrid({
               <li key={product.id}>
                 <button
                   type="button"
-                  disabled={!product.available}
+                  disabled={!product.available || inCart >= (product.stock ?? 99)}
                   onClick={() => onAdd(product.id)}
                   aria-label={`Add ${product.name}, ${formatCentavos(product.price)}${inCart ? `, ${inCart} in order` : ""}`}
                   className={cn(
@@ -97,7 +97,12 @@ export function ProductGrid({
                     </span>
                   )}
                   <ProductImage product={product} sizes="200px" className={cn("h-24 w-full", !product.available && "opacity-60")} />
-                  <span className={cn("text-sm font-semibold", !product.available && "opacity-60")}>{product.name}</span>
+                  <span className={cn("text-sm font-semibold", !product.available && "opacity-60")}>
+                    {product.name}
+                    {product.available && product.stock !== null && (
+                      <span className="block text-xs font-normal text-muted-foreground">{product.stock} left</span>
+                    )}
+                  </span>
                   <span className="mt-auto flex items-center justify-between gap-2">
                     <span className={cn("font-semibold", product.available ? "text-brand-strong" : "text-muted-foreground")}>
                       {formatCentavos(product.price)}

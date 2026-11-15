@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { checkoutOrder } from "./service";
+import { checkoutOrder, toMenuProduct } from "./service";
 import type { MenuProduct } from "./types";
 
 const menu: MenuProduct[] = [
-  { id: "burger", name: "Classic Cheeseburger", category: "burgers", price: 14900, available: true },
-  { id: "tea", name: "Iced Tea", category: "drinks", price: 5900, available: true },
-  { id: "rings", name: "Onion Rings", category: "sides", price: 8900, available: false },
+  { id: "burger", name: "Classic Cheeseburger", category: "burgers", price: 14900, stock: null, available: true },
+  { id: "tea", name: "Iced Tea", category: "drinks", price: 5900, stock: null, available: true },
+  { id: "rings", name: "Onion Rings", category: "sides", price: 8900, stock: null, available: false },
+  { id: "pint", name: "Pint", category: "iceCream", price: 9200, stock: 2, available: true },
 ];
 
 const base = { method: "cash" } as const;
@@ -55,4 +56,19 @@ test("GCash is charged the exact total with no change", () => {
   assert.ok(result.ok);
   assert.equal(result.order.received, 5900);
   assert.equal(result.order.change, 0);
+});
+
+test("rejects selling more ice cream units than are in stock", () => {
+  const result = checkoutOrder(menu, { ...base, amountReceived: 99999, lines: [{ productId: "pint", quantity: 3 }] });
+  assert.deepEqual(result, { ok: false, error: "Only 2 Pint left in stock." });
+});
+
+test("the POS menu hides production cost and marks counted items with 0 units as sold out", () => {
+  const product = {
+    id: "pint", name: "Pint", description: "Dan Eric", category: "iceCream", price: 9200, cost: 7600, stock: 0, available: true,
+  } as const;
+  assert.deepEqual(toMenuProduct(product), {
+    id: "pint", name: "Pint", category: "iceCream", price: 9200, image: undefined, stock: 0, available: false, unavailableReason: "Sold out",
+  });
+  assert.equal(toMenuProduct({ ...product, stock: 5 }).available, true);
 });

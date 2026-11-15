@@ -11,6 +11,7 @@ const burger: Product = {
   category: "burgers",
   price: 14900,
   cost: 5840,
+  stock: null,
   available: true,
 };
 const fields = { name: "Ube Sundae", description: "", category: "iceCream", price: 7500, cost: 3050, available: true } as const;
@@ -34,6 +35,29 @@ test("making a product available again clears its out-of-stock reason", () => {
   const store = createProductStore([{ ...burger, available: false, unavailableReason: "Out of buns" }]);
   store.update(burger.id, { ...fields, available: true });
   assert.equal(store.list()[0].unavailableReason, undefined);
+});
+
+test("ice cream is counted by unit and starts at 0; made items are not counted", () => {
+  const store = createProductStore([burger]);
+  assert.equal(store.create(fields).stock, 0);
+  assert.equal(store.create({ ...fields, category: "burgers" }).stock, null);
+});
+
+test("editing an ice cream item keeps its stock count", () => {
+  const store = createProductStore([{ ...burger, id: "pint", category: "iceCream", stock: 13 }]);
+  assert.equal(store.update("pint", { ...fields, price: 9200 })?.stock, 13);
+});
+
+test("selling deducts units, and refuses the whole sale if any item is short", () => {
+  const store = createProductStore([
+    { ...burger, stock: null },
+    { ...burger, id: "pint", category: "iceCream", stock: 3 },
+  ]);
+  assert.equal(store.sell([{ productId: "pint", quantity: 2 }, { productId: burger.id, quantity: 5 }]), true);
+  assert.equal(store.list().find((p) => p.id === "pint")?.stock, 1);
+
+  assert.equal(store.sell([{ productId: burger.id, quantity: 1 }, { productId: "pint", quantity: 2 }]), false);
+  assert.equal(store.list().find((p) => p.id === "pint")?.stock, 1);
 });
 
 test("archived products disappear from the list; unknown ids are reported", () => {

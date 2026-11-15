@@ -5,13 +5,13 @@ import { StatCard } from "@/components/stat-card";
 import { ProductsManager } from "@/features/products/components/products-manager";
 import { productMargin } from "@/features/products/costing";
 import { getProducts } from "@/features/products/queries";
-import { categories } from "@/features/products/types";
+import { categories, isOnSale } from "@/features/products/types";
 
 export const metadata: Metadata = { title: "Products" };
 
 export default async function ProductsPage() {
   const products = await getProducts();
-  const unavailable = products.filter((p) => !p.available);
+  const unavailable = products.filter((p) => !isOnSale(p));
   const avgMargin = products.length
     ? products.reduce((sum, p) => sum + productMargin(p.price, p.cost).marginPercent, 0) / products.length
     : 0;
@@ -43,7 +43,9 @@ export default async function ProductsPage() {
           icon={AlertTriangle}
           tone="danger"
           delta={{
-            text: unavailable.length ? unavailable.map((p) => p.name).join(", ") : "Everything is on sale",
+            text: unavailable.length
+              ? unavailable.slice(0, 2).map((p) => p.name).join(", ") + (unavailable.length > 2 ? ` +${unavailable.length - 2} more` : "")
+              : "Everything is on sale",
             kind: unavailable.length ? "alert" : "neutral",
           }}
         />

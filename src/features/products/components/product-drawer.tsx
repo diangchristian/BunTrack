@@ -54,6 +54,7 @@ function ProductForm({ product, onDone }: { product: Product | null; onDone: () 
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [archiving, startArchive] = useTransition();
 
+  const resold = category === "iceCream"; // Dan Eric ice cream: bought ready-made, counted by unit
   const priceC = parsePesos(price);
   const costC = parsePesos(cost);
   const margin = priceC && costC !== null ? productMargin(priceC, costC) : null;
@@ -116,12 +117,14 @@ function ProductForm({ product, onDone }: { product: Product | null; onDone: () 
             <Field label="Selling price (₱)" htmlFor="price" error={errors.price?.[0]}>
               <Input id="price" name="price" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="149.00" required aria-invalid={!!errors.price} className="h-10 tabular-nums" />
             </Field>
-            <Field label="Production cost (₱)" htmlFor="cost" error={errors.cost?.[0]}>
+            <Field label={resold ? "Dealer price (₱)" : "Production cost (₱)"} htmlFor="cost" error={errors.cost?.[0]}>
               <Input id="cost" name="cost" inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="58.40" required aria-invalid={!!errors.cost} className="h-10 tabular-nums" />
             </Field>
           </div>
           <p className="-mt-2 text-xs text-muted-foreground">
-            Enter the cost per serving for now. It will be calculated from the recipe once Inventory is built.
+            {resold
+              ? "What you pay Dan Eric per unit. Profit is the selling price minus this."
+              : "Enter the cost per serving for now. It will be calculated from the recipe once Inventory is built."}
           </p>
         </section>
 
@@ -133,13 +136,14 @@ function ProductForm({ product, onDone }: { product: Product | null; onDone: () 
               {product?.unavailableReason && !product.available
                 ? `Currently off: ${product.unavailableReason}`
                 : "Turn off to hide it from sale without deleting it."}
+              {resold && ` ${product?.stock ?? 0} in stock; it shows as sold out at 0.`}
             </span>
           </span>
         </label>
 
         <section className="flex flex-col gap-2 rounded-[14px] border bg-secondary p-4 text-sm" aria-live="polite">
           <h3 className="mb-1 text-[15px] font-semibold">Cost summary</h3>
-          <Row label="Production cost / serving" value={costC !== null ? formatCentavos(costC) : "—"} />
+          <Row label={resold ? "Dealer price / unit" : "Production cost / serving"} value={costC !== null ? formatCentavos(costC) : "—"} />
           <Row label="Selling price" value={priceC ? formatCentavos(priceC) : "—"} />
           <Row label="Gross profit" value={margin ? formatCentavos(margin.profit) : "—"} strong={!!margin && margin.profit >= 0} />
           <Row

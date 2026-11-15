@@ -1,5 +1,6 @@
 import { changeDue, orderTotals } from "./pricing";
 import type { CheckoutInput } from "./schemas";
+import { isSoldOut, type Product } from "@/features/products/types";
 import type { MenuProduct } from "./types";
 
 type CheckoutResult =
@@ -13,6 +14,21 @@ type CheckoutResult =
       };
     }
   | { ok: false; error: string };
+
+/** What the POS sees of a product: no production cost, and counted items at 0 units are sold out. */
+export function toMenuProduct({ id, name, category, price, image, stock, available, unavailableReason }: Product): MenuProduct {
+  const soldOut = isSoldOut({ stock });
+  return {
+    id,
+    name,
+    category,
+    price,
+    image,
+    stock,
+    available: available && !soldOut,
+    unavailableReason: soldOut ? "Sold out" : unavailableReason,
+  };
+}
 
 /**
  * Prices an order from the server's menu. The browser only sends product ids and
@@ -29,6 +45,9 @@ export function checkoutOrder(menu: MenuProduct[], input: CheckoutInput): Checko
     const product = menu.find((p) => p.id === productId);
     if (!product) return { ok: false, error: "An item in this order is no longer on the menu." };
     if (!product.available) return { ok: false, error: `${product.name} is unavailable right now.` };
+    if (product.stock !== null && quantity > product.stock) {
+      return { ok: false, error: `Only ${product.stock} ${product.name} left in stock.` };
+    }
     lines.push({ productId, name: product.name, quantity, unitPrice: product.price });
   }
 
