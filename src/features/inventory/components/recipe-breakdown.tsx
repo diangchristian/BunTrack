@@ -72,9 +72,12 @@ export function RecipeBreakdown({
           </p>
         </div>
         {draft === null ? (
-          <Button variant="ghost" size="sm" onClick={() => setDraft(recipe)}>
-            <Pencil data-icon="inline-start" /> Edit recipe
-          </Button>
+          // With no recipe yet, the Add recipe button sits in the empty table instead.
+          recipe.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => setDraft(recipe)}>
+              <Pencil data-icon="inline-start" /> Edit recipe
+            </Button>
+          )
         ) : (
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => (setDraft(null), setError(undefined))} disabled={saving}>
@@ -103,7 +106,16 @@ export function RecipeBreakdown({
             {rows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                  No recipe yet. Click Edit recipe and add what one serving uses.
+                  {draft === null ? (
+                    <span className="flex flex-col items-center gap-3">
+                      No recipe yet. Add what one {pieces === 2 ? "piece" : "serving"} uses to see its cost.
+                      <Button onClick={() => setDraft([])}>
+                        <Plus data-icon="inline-start" /> Add recipe
+                      </Button>
+                    </span>
+                  ) : (
+                    "Pick the first ingredient below, enter how much one serving uses, then Save recipe."
+                  )}
                 </TableCell>
               </TableRow>
             )}
