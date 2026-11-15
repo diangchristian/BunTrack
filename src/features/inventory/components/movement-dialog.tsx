@@ -75,12 +75,12 @@ function MovementForm({
   const [totalPaid, setTotalPaid] = useState("");
   const errors = state.fieldErrors ?? {};
   const batch = type === "stock-in" && item?.homemade; // made in the shop, not bought
-  const pack = type === "stock-in" && !batch ? item?.pack : undefined;
+  const packSize = type === "stock-in" && !batch ? item?.packSize : undefined;
   const perUnit = item ? perUnitLabel(item.unit) : "";
 
   // Live preview of what saving will do, using the same rules the server checks with.
   // The new stock level shows as soon as the amount is typed; the cost once the total is too.
-  const preview = item ? previewStockIn(item.unit, pack?.size, quantity, type === "stock-in" ? totalPaid : "") : { amount: null, unitCost: undefined };
+  const preview = item ? previewStockIn(item.unit, packSize, quantity, type === "stock-in" ? totalPaid : "") : { amount: null, unitCost: undefined };
   const amount = preview.amount;
   const after = item && amount !== null ? (type === "stock-in" ? item.quantity + amount : type === "adjustment" ? amount : item.quantity - amount) : null;
   const newCost = preview.unitCost;
@@ -161,14 +161,14 @@ function MovementForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <Field
           label={
-            pack
-              ? `How many? (1 ${pack.name} = ${formatQuantity(pack.size, item!.unit)})`
+            packSize
+              ? `How many packs? (1 pack = ${formatQuantity(packSize, item!.unit)})`
               : `${batch ? "Quantity made" : type === "stock-in" ? "Quantity received" : type === "adjustment" ? "Counted on hand" : "Quantity wasted"}${item ? ` (${units[item.unit].label})` : ""}`
           }
           htmlFor="quantity"
           error={errors.quantity?.[0]}
         >
-          <Input id="quantity" name="quantity" inputMode="decimal" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder={pack ? "3" : item?.unit === "pcs" ? "50" : "2.5"} required className="h-10 tabular-nums" />
+          <Input id="quantity" name="quantity" inputMode="decimal" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder={packSize ? "3" : item?.unit === "pcs" ? "50" : "2.5"} required className="h-10 tabular-nums" />
         </Field>
         {type === "stock-in" ? (
           <Field label={batch ? "Total cost of this batch (₱)" : "Total paid (₱)"} htmlFor="totalPaid" error={errors.totalPaid?.[0]}>

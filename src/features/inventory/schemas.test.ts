@@ -61,10 +61,10 @@ test("Add item: the made-in-house checkbox is optional", () => {
 });
 
 test("Add item has no cost; an optional pack size is stored in the small unit", () => {
-  const base = { name: "Hotdog", category: "Meat", unit: "pcs", minimum: "10", homemade: null, packName: " Pack ", packSize: "10" };
-  assert.deepEqual(itemFormSchema.parse(base).pack, { name: "pack", size: 10 });
-  assert.deepEqual(itemFormSchema.parse({ ...base, name: "French Fries", unit: "kg", packName: "bag", packSize: "1" }).pack, { name: "bag", size: 1000 });
-  assert.equal(itemFormSchema.parse({ ...base, packSize: "" }).pack, undefined);
+  const base = { name: "Hotdog", category: "Meat", unit: "pcs", minimum: "10", homemade: null, packSize: "10" };
+  assert.equal(itemFormSchema.parse(base).packSize, 10);
+  assert.equal(itemFormSchema.parse({ ...base, name: "French Fries", unit: "kg", packSize: "1" }).packSize, 1000);
+  assert.equal(itemFormSchema.parse({ ...base, packSize: "" }).packSize, undefined);
   const half = itemFormSchema.safeParse({ ...base, packSize: "2.5" }); // pieces come whole
   assert.deepEqual(half.error?.issues.map((i) => i.path[0]), ["packSize"]);
   assert.equal("unitCost" in itemFormSchema.parse(base), false);
@@ -77,8 +77,8 @@ test("free stock (₱0) is allowed and doesn't change the item's cost", () => {
 });
 
 test("a homemade item can't be bought by the pack", () => {
-  const base = { name: "Beef Patties", category: "Meat", unit: "pcs", minimum: "40", packName: "pack", packSize: "10" };
-  assert.equal(itemFormSchema.parse({ ...base, homemade: "on" }).pack, undefined);
+  const base = { name: "Beef Patties", category: "Meat", unit: "pcs", minimum: "40", packSize: "10" };
+  assert.equal(itemFormSchema.parse({ ...base, homemade: "on" }).packSize, undefined);
 });
 
 test("pack size and stock amounts follow one set of rules (also used by the live previews)", () => {

@@ -97,17 +97,16 @@ export const itemFormSchema = z
     homemade: z.literal("on").nullish().transform((v) => v === "on"),
     /** Reorder point in the big unit (kg, L, pcs); converted by the action. */
     minimum: z.string().trim().regex(/^\d{1,6}(\.\d{1,3})?$/, { error: "Enter a number, like 3" }).transform(Number),
-    /** Optional "bought as": e.g. a "pack" of 10 pcs, a "bag" of 1 kg. Size is in the big unit. */
-    packName: z.string().trim().toLowerCase().max(15).optional(),
+    /** Optional: bought by the pack/bag, e.g. 10 (pcs) or 1 (kg). In the big unit; stored in the small one. */
     packSize: z.string().trim().optional(),
   })
-  .transform(({ packName, packSize, ...values }, ctx) => {
+  .transform(({ packSize, ...values }, ctx) => {
     // Homemade items are made in batches, never bought by the pack.
-    if (!packSize || values.homemade) return { ...values, pack: undefined };
+    if (!packSize || values.homemade) return { ...values, packSize: undefined };
     const size = parsePackSize(packSize, values.unit);
     if (size === null) {
       ctx.addIssue({ code: "custom", path: ["packSize"], message: values.unit === "pcs" ? "Enter whole pieces, like 10" : "Enter an amount, like 1" });
       return z.NEVER;
     }
-    return { ...values, pack: { name: packName || "pack", size } };
+    return { ...values, packSize: size };
   });

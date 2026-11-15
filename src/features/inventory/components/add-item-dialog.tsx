@@ -42,7 +42,6 @@ function AddItemForm({ onDone }: { onDone: () => void }) {
   const [unit, setUnit] = useState<UnitId>("pcs");
   const [homemade, setHomemade] = useState(false);
   const [byPack, setByPack] = useState(false);
-  const [packName, setPackName] = useState("pack");
   const [packSize, setPackSize] = useState("");
   const [openingQuantity, setOpeningQuantity] = useState("");
   const [openingTotal, setOpeningTotal] = useState("");
@@ -52,7 +51,6 @@ function AddItemForm({ onDone }: { onDone: () => void }) {
   const perUnit = perUnitLabel(unit);
   const usesPack = byPack && !homemade;
   const packSizeSmall = usesPack ? (parsePackSize(packSize, unit) ?? undefined) : undefined;
-  const packWord = packName.trim() || "pack";
   // Live "= 30 pcs · ₱15.00 per pc" using the same rules the server checks with.
   const opening = previewStockIn(unit, packSizeSmall, openingQuantity, openingTotal);
 
@@ -137,16 +135,8 @@ function AddItemForm({ onDone }: { onDone: () => void }) {
             ))}
           </div>
           {byPack && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Called a" htmlFor="pack-name">
-                <Input id="pack-name" name="packName" list="pack-names" value={packName} onChange={(e) => setPackName(e.target.value)} maxLength={15} className="h-10" />
-                <datalist id="pack-names">
-                  {["pack", "bag", "box", "bottle", "tray"].map((n) => (
-                    <option key={n} value={n} />
-                  ))}
-                </datalist>
-              </Field>
-              <Field label={`Each ${packWord} holds (${unitLabel})`} htmlFor="pack-size" error={errors.packSize?.[0]}>
+            <div>
+              <Field label={`Each pack or bag holds (${unitLabel})`} htmlFor="pack-size" error={errors.packSize?.[0]}>
                 <Input
                   id="pack-size"
                   name="packSize"
@@ -174,7 +164,7 @@ function AddItemForm({ onDone }: { onDone: () => void }) {
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <Field
-            label={homemade ? `How many made (${unitLabel})` : usesPack ? `How many? (1 ${packWord} = ${packSize || "…"} ${unitLabel})` : `How much (${unitLabel})`}
+            label={homemade ? `How many made (${unitLabel})` : usesPack ? `How many packs? (1 pack = ${packSize || "…"} ${unitLabel})` : `How much (${unitLabel})`}
             htmlFor="opening-quantity"
             error={errors.openingQuantity?.[0]}
           >

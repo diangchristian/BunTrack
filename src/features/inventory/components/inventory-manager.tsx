@@ -130,7 +130,7 @@ export function InventoryManager({
                         <p className="text-xs text-muted-foreground">
                           {item.category}
                           {item.homemade && " · Made in-house"}
-                          {item.pack && ` · ${item.pack.name} of ${formatQuantity(item.pack.size, item.unit)}`}
+                          {item.packSize && ` · pack of ${formatQuantity(item.packSize, item.unit)}`}
                         </p>
                       </TableCell>
                       <TableCell>

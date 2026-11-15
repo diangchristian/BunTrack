@@ -22,7 +22,7 @@ export async function recordStockMovement(_prev: InventoryFormState, formData: F
   if (!item) return { fieldErrors: { itemId: ["Pick an item"] } };
 
   // Homemade items are counted per piece made, never by the pack.
-  const parsed = movementFormSchema(item.unit, item.homemade ? undefined : item.pack?.size).safeParse(
+  const parsed = movementFormSchema(item.unit, item.homemade ? undefined : item.packSize).safeParse(
     Object.fromEntries(["type", "itemId", "quantity", "totalPaid", "reference", "supplier", "note", "date"].map((k) => [k, formText(formData, k)])),
   );
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
@@ -52,7 +52,7 @@ export async function addInventoryItem(_prev: InventoryFormState, formData: Form
   if (!(await canUseStore())) return { error: "You don't have permission to add items." };
 
   const parsed = itemFormSchema.safeParse({
-    ...Object.fromEntries(["name", "category", "unit", "minimum", "packName", "packSize"].map((k) => [k, formText(formData, k)])),
+    ...Object.fromEntries(["name", "category", "unit", "minimum", "packSize"].map((k) => [k, formText(formData, k)])),
     homemade: formData.get("homemade"),
   });
 
@@ -64,7 +64,7 @@ export async function addInventoryItem(_prev: InventoryFormState, formData: Form
   let opening: { quantity: number; unitCost?: number; date: string } | undefined;
   if (!openingQuantity && openingTotal) openingErrors.openingQuantity = ["Enter how much you have, or clear the total"];
   if (openingQuantity && parsed.success) {
-    const result = openingStockIn(parsed.data.unit, parsed.data.homemade ? undefined : parsed.data.pack?.size, openingQuantity, openingTotal);
+    const result = openingStockIn(parsed.data.unit, parsed.data.homemade ? undefined : parsed.data.packSize, openingQuantity, openingTotal);
     if (result.success) opening = result.data;
     else {
       // Keyed by form field; "totalPaid" isn't in the parsed output type, so widen it.

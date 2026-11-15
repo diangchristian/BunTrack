@@ -38,8 +38,8 @@ export type InventoryItem = {
    * cost to make). 0 = no Stock In yet, shown as "No cost yet".
    */
   unitCost: number;
-  /** How it's bought, e.g. { name: "pack", size: 10 } pcs or { name: "bag", size: 1000 } g. */
-  pack?: { name: string; size: number };
+  /** Bought by the pack (or bag): how much one holds, in the small unit, e.g. 10 pcs or 1000 g. */
+  packSize?: number;
   /** Made in the shop (e.g. patties), so Stock In records a batch made, not a purchase. */
   homemade?: boolean;
 };
