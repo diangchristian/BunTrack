@@ -4,10 +4,11 @@ import { refresh } from "next/cache";
 
 import { getCurrentUser } from "@/features/auth/queries";
 import { inventoryStore } from "@/features/inventory/store";
+import { productStore } from "@/features/products/store";
 import { manilaDate } from "@/lib/format";
 import { getMenu } from "./queries";
 import { checkoutSchema } from "./schemas";
-import { checkoutOrder } from "./service";
+import { checkoutOrder, piecesToDeduct } from "./service";
 import type { Receipt } from "./types";
 
 // shortcut: in-memory counter, resets when the server restarts and isn't shared
@@ -27,7 +28,7 @@ export async function completeOrder(input: unknown): Promise<{ ok: true; receipt
   // Re-checks stock at the moment of sale (two tills can't sell the last unit twice) and
   // deducts every recipe ingredient. All-or-nothing: a short ingredient deducts nothing.
   const orderNumber = `#${nextOrderNumber}`;
-  const sale = inventoryStore.consume(result.order.lines, orderNumber, user.name, manilaDate());
+  const sale = inventoryStore.consume(piecesToDeduct(result.order.lines, productStore.list()), orderNumber, user.name, manilaDate());
   if (!sale.ok) return { ok: false, error: `Not enough ${sale.shortOf} for this order. Remove some items and try again.` };
   nextOrderNumber++;
   refresh(); // the POS re-renders with the new servings left

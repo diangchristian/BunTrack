@@ -17,9 +17,9 @@ type CheckoutResult =
 
 /** What the POS sees of a product: no cost, and a reason when it can't be sold. */
 export function toMenuProduct(product: CostedProduct): MenuProduct {
-  const { id, name, category, price, image, servingsLeft } = product;
+  const { id, name, category, price, image, pieces, servingsLeft } = product;
   const reason = unavailableReason(product);
-  return { id, name, category, price, image, servingsLeft, available: !reason, unavailableReason: reason };
+  return { id, name, category, price, image, pieces, servingsLeft, available: !reason, unavailableReason: reason };
 }
 
 /**
@@ -56,4 +56,12 @@ export function checkoutOrder(menu: MenuProduct[], input: CheckoutInput): Checko
       change: changeDue(total, received),
     },
   };
+}
+
+/** Order lines → recipe servings to deduct: a Buy 1 Take 1 order hands out 2 pieces. */
+export function piecesToDeduct(lines: { productId: string; quantity: number }[], products: { id: string; pieces: number }[]) {
+  return lines.map(({ productId, quantity }) => ({
+    productId,
+    quantity: quantity * (products.find((p) => p.id === productId)?.pieces ?? 1),
+  }));
 }

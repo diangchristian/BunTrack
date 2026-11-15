@@ -15,8 +15,10 @@ export type Product = {
   name: string;
   description: string;
   category: CategoryId;
-  /** Selling price in centavos. */
+  /** Selling price in centavos, per order. */
   price: number;
+  /** Pieces handed out per order: 1 normally, 2 for Buy 1 Take 1. The recipe is per piece. */
+  pieces: number;
   /** Path under /public, e.g. "/products/pint.jpg". Falls back to a category icon. */
   image?: string;
   /** Switched on for sale by the owner. Sold-out is worked out from stock, not stored. */
@@ -25,10 +27,10 @@ export type Product = {
 
 /** A product with its cost and stock worked out from its recipe and current Inventory. */
 export type CostedProduct = Product & {
-  /** Production cost per serving (centavos); for Dan Eric ice cream, the dealer price. */
+  /** Cost per order (centavos): recipe × pieces. For Dan Eric ice cream, the dealer price. */
   cost: number;
   hasRecipe: boolean;
-  /** Servings the stock can still make; null when there's no recipe to track. */
+  /** Orders the stock can still make; null when there's no recipe to track. */
   servingsLeft: number | null;
   /** Name of the inventory item that runs out first, e.g. "Onions" or "Pint". */
   limitedBy?: string;

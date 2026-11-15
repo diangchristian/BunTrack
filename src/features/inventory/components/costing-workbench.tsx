@@ -70,11 +70,11 @@ export function CostingWorkbench({
           </section>
 
           <section className="rounded-xl border bg-card p-5 shadow-[0_2px_8px_rgb(31_26_23/0.06)]">
-            <RecipeBreakdown key={product.id} productId={product.id} recipe={recipes[product.id] ?? []} items={items} resold={resold} />
+            <RecipeBreakdown key={product.id} productId={product.id} recipe={recipes[product.id] ?? []} items={items} resold={resold} pieces={product.pieces} />
           </section>
         </div>
 
-        <PricingPanel key={product.id} productId={product.id} productName={product.name} cost={product.hasRecipe ? product.cost : null} price={product.price} resold={resold} />
+        <PricingPanel key={product.id} productId={product.id} productName={product.name} cost={product.hasRecipe ? product.cost : null} price={product.price} resold={resold} pieces={product.pieces} />
       </div>
 
       <section className="flex flex-col gap-4 rounded-xl border bg-card p-5 shadow-[0_2px_8px_rgb(31_26_23/0.06)]">

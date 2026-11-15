@@ -18,11 +18,14 @@ export function RecipeBreakdown({
   recipe,
   items,
   resold,
+  pieces,
 }: {
   productId: string;
   recipe: RecipeLine[];
   items: InventoryItem[];
   resold: boolean;
+  /** 2 for Buy 1 Take 1: the recipe is per piece and each order uses 2. */
+  pieces: number;
 }) {
   const [draft, setDraft] = useState<RecipeLine[] | null>(null); // null = viewing
   const [adding, setAdding] = useState({ itemId: "", quantity: "" });
@@ -61,7 +64,11 @@ export function RecipeBreakdown({
         <div>
           <h2 className="text-[15px] font-semibold">Ingredient breakdown</h2>
           <p className="text-xs text-muted-foreground">
-            {resold ? "Dan Eric item: its cost is the dealer price you pay per unit." : "Per serving · unit costs pulled from Inventory"}
+            {resold
+              ? "Dan Eric item: its cost is the dealer price you pay per unit."
+              : pieces === 2
+                ? "Per piece · Buy 1 Take 1, so each order uses 2 pieces"
+                : "Per serving · unit costs pulled from Inventory"}
           </p>
         </div>
         {draft === null ? (
@@ -148,11 +155,20 @@ export function RecipeBreakdown({
             <TableFooter>
               <TableRow>
                 <TableCell colSpan={3} className="font-semibold">
-                  Total production cost
+                  {pieces === 2 ? "Production cost per piece" : "Total production cost"}
                 </TableCell>
                 <TableCell className="text-right font-bold tabular-nums">{formatCentavos(Math.round(total))}</TableCell>
                 <TableCell colSpan={draft ? 2 : 1} className="hidden md:table-cell" />
               </TableRow>
+              {pieces === 2 && (
+                <TableRow>
+                  <TableCell colSpan={3} className="font-semibold">
+                    Per order (Buy 1 Take 1 × 2)
+                  </TableCell>
+                  <TableCell className="text-right font-bold tabular-nums">{formatCentavos(Math.round(total) * 2)}</TableCell>
+                  <TableCell colSpan={draft ? 2 : 1} className="hidden md:table-cell" />
+                </TableRow>
+              )}
             </TableFooter>
           )}
         </Table>

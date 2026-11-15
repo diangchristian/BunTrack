@@ -18,13 +18,19 @@ const pesos = (label: string) =>
     return centavos;
   });
 
-export const productFormSchema = z.object({
+export const priceSchema = pesos("a price").refine((v) => v > 0, { error: "Price must be more than ₱0" });
+
+export const productFormSchema = z
+  .object({
   name: z.string().trim().min(1, { error: "Enter a product name" }).max(60, { error: "Keep the name under 60 characters" }),
   description: z.string().trim().max(120, { error: "Keep the description under 120 characters" }),
   category: z.enum(categories.map((c) => c.id) as [CategoryId, ...CategoryId[]], { error: "Pick a category" }),
-  price: pesos("a price").refine((v) => v > 0, { error: "Price must be more than ₱0" }),
+  price: priceSchema,
   // An unchecked checkbox is simply missing from the form data.
   available: z.literal("on").nullish().transform((v) => v === "on"),
-});
+  b1t1: z.literal("on").nullish(),
+})
+  // Buy 1 Take 1 hands out 2 pieces per order.
+  .transform(({ b1t1, ...values }) => ({ ...values, pieces: b1t1 === "on" ? 2 : 1 }));
 
 export type ProductFormValues = z.infer<typeof productFormSchema>;

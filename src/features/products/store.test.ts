@@ -10,9 +10,10 @@ const burger: Product = {
   description: "Beef patty, cheese",
   category: "burgers",
   price: 14900,
+  pieces: 1,
   available: true,
 };
-const fields = { name: "Pint", description: "Dan Eric", category: "iceCream", price: 9200, available: true } as const;
+const fields = { name: "Pint", description: "Dan Eric", category: "iceCream", price: 9200, pieces: 1, available: true } as const;
 
 test("a created product is listed with a new id", () => {
   const store = createProductStore([burger]);

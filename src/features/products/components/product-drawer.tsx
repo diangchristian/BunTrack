@@ -122,6 +122,16 @@ function ProductForm({ product, onDone }: { product: CostedProduct | null; onDon
           </div>
         </section>
 
+        <label className="flex items-center gap-3 rounded-[10px] bg-brand-soft p-3">
+          <Switch name="b1t1" value="on" defaultChecked={product?.pieces === 2} />
+          <span>
+            <span className="block text-sm font-semibold text-brand-strong">Buy 1 Take 1</span>
+            <span className="block text-xs text-muted-foreground">
+              Each order gives 2 pieces. Enter the recipe per piece; cost and stock count both pieces.
+            </span>
+          </span>
+        </label>
+
         <label className="flex items-center gap-3 rounded-[10px] bg-success-soft p-3">
           <Switch name="available" value="on" defaultChecked={product?.available ?? true} />
           <span>
@@ -150,7 +160,7 @@ function ProductForm({ product, onDone }: { product: CostedProduct | null; onDon
               {product ? "No recipe yet. Add one in Costing & Pricing to see the cost." : "Save first, then add the recipe in Costing & Pricing."}
             </p>
           )}
-          <Row label={resold ? "Dealer price / unit" : "Production cost / serving"} value={costC !== null ? formatCentavos(costC) : "—"} />
+          <Row label={resold ? "Dealer price / unit" : product?.pieces === 2 ? "Production cost / order (2 pcs)" : "Production cost / serving"} value={costC !== null ? formatCentavos(costC) : "—"} />
           <Row label="Selling price" value={priceC ? formatCentavos(priceC) : "—"} />
           <Row label="Gross profit" value={margin ? formatCentavos(margin.profit) : "—"} strong={!!margin && margin.profit >= 0} />
           <Row

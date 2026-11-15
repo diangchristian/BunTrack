@@ -99,6 +99,9 @@ export function ProductGrid({
                   <ProductImage product={product} sizes="200px" className={cn("h-24 w-full", !product.available && "opacity-60")} />
                   <span className={cn("text-sm font-semibold", !product.available && "opacity-60")}>
                     {product.name}
+                    {product.pieces === 2 && (
+                      <span className="ml-1.5 rounded-full bg-brand-soft px-1.5 py-0.5 align-middle text-[10px] font-bold text-brand-strong">B1T1</span>
+                    )}
                     {product.available && product.servingsLeft !== null && (
                       <span className="block text-xs font-normal text-muted-foreground">{product.servingsLeft} left</span>
                     )}

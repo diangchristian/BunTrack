@@ -82,7 +82,14 @@ export function ProductsManager({ products }: { products: CostedProduct[] }) {
                     <div className="flex items-center gap-3">
                       <ProductImage product={product} sizes="40px" className="size-10" />
                       <div className="min-w-0">
-                        <p className="truncate font-semibold">{product.name}</p>
+                        <p className="truncate font-semibold">
+                          {product.name}
+                          {product.pieces === 2 && (
+                            <Badge variant="brand" className="ml-1.5 align-middle">
+                              B1T1
+                            </Badge>
+                          )}
+                        </p>
                         <p className="max-w-64 truncate text-xs text-muted-foreground">{product.description}</p>
                       </div>
                     </div>

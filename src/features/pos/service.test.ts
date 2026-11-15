@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { checkoutOrder, toMenuProduct } from "./service";
+import { checkoutOrder, piecesToDeduct, toMenuProduct } from "./service";
 import type { MenuProduct } from "./types";
 
 const menu: MenuProduct[] = [
-  { id: "burger", name: "Classic Cheeseburger", category: "burgers", price: 14900, servingsLeft: null, available: true },
-  { id: "tea", name: "Iced Tea", category: "drinks", price: 5900, servingsLeft: null, available: true },
-  { id: "rings", name: "Onion Rings", category: "sides", price: 8900, servingsLeft: null, available: false },
-  { id: "pint", name: "Pint", category: "iceCream", price: 9200, servingsLeft: 2, available: true },
+  { id: "burger", name: "Classic Cheeseburger", category: "burgers", price: 14900, pieces: 1, servingsLeft: null, available: true },
+  { id: "tea", name: "Iced Tea", category: "drinks", price: 5900, pieces: 1, servingsLeft: null, available: true },
+  { id: "rings", name: "Onion Rings", category: "sides", price: 8900, pieces: 1, servingsLeft: null, available: false },
+  { id: "pint", name: "Pint", category: "iceCream", price: 9200, pieces: 1, servingsLeft: 2, available: true },
 ];
 
 const base = { method: "cash" } as const;
@@ -65,11 +65,11 @@ test("rejects selling more ice cream units than are in stock", () => {
 
 test("the POS menu hides cost, says which ingredient ran out, and says Sold out for resold items", () => {
   const rings = {
-    id: "onion-rings", name: "Onion Rings", description: "", category: "sides", price: 8900, available: true,
+    id: "onion-rings", name: "Onion Rings", description: "", category: "sides", price: 8900, pieces: 1, available: true,
     cost: 1890, hasRecipe: true, servingsLeft: 0, limitedBy: "Onions",
   } as const;
   assert.deepEqual(toMenuProduct(rings), {
-    id: "onion-rings", name: "Onion Rings", category: "sides", price: 8900, image: undefined,
+    id: "onion-rings", name: "Onion Rings", category: "sides", price: 8900, image: undefined, pieces: 1,
     servingsLeft: 0, available: false, unavailableReason: "Out of Onions",
   });
   // Dan Eric items run out of themselves; a made item named like its ingredient still names it.
@@ -77,4 +77,12 @@ test("the POS menu hides cost, says which ingredient ran out, and says Sold out 
   assert.equal(toMenuProduct({ ...rings, name: "French Fries", limitedBy: "French Fries" }).unavailableReason, "Out of French Fries");
   assert.equal(toMenuProduct({ ...rings, servingsLeft: 5 }).available, true);
   assert.equal(toMenuProduct({ ...rings, servingsLeft: 5, available: false }).unavailableReason, "Switched off");
+});
+
+test("a Buy 1 Take 1 order uses two pieces of stock per order", () => {
+  const products = [{ id: "b1t1-burger", pieces: 2 }, { id: "tea", pieces: 1 }];
+  assert.deepEqual(piecesToDeduct([{ productId: "b1t1-burger", quantity: 3 }, { productId: "tea", quantity: 2 }], products), [
+    { productId: "b1t1-burger", quantity: 6 },
+    { productId: "tea", quantity: 2 },
+  ]);
 });

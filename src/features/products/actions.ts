@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { canManageStore } from "@/features/auth/queries";
 import { inventoryStore } from "@/features/inventory/store";
-import { productFormSchema } from "./schemas";
+import { priceSchema, productFormSchema } from "./schemas";
 import { productStore } from "./store";
 
 export type ProductFormState = {
@@ -24,6 +24,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     category: formData.get("category"),
     price: formData.get("price") ?? "",
     available: formData.get("available"),
+    b1t1: formData.get("b1t1"),
   });
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
 
@@ -54,7 +55,7 @@ export async function archiveProduct(id: string): Promise<ProductFormState> {
 /** Costing & Pricing → Save price. `price` is the pesos text the user typed ("149.50"), validated here. */
 export async function updateProductPrice(id: string, price: unknown): Promise<ProductFormState> {
   if (!(await canManageStore())) return { error: "You don't have permission to change prices." };
-  const parsed = productFormSchema.shape.price.safeParse(typeof price === "string" ? price : "");
+  const parsed = priceSchema.safeParse(typeof price === "string" ? price : "");
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   if (!productStore.update(id, { price: parsed.data })) return { error: "This product no longer exists." };
   refresh();

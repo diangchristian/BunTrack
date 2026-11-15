@@ -20,6 +20,7 @@ export function PricingPanel({
   cost,
   price,
   resold,
+  pieces,
 }: {
   productId: string;
   productName: string;
@@ -27,6 +28,7 @@ export function PricingPanel({
   cost: number | null;
   price: number;
   resold: boolean;
+  pieces: number;
 }) {
   const [priceInput, setPriceInput] = useState((price / 100).toFixed(2));
   // Dan Eric margins are set by the dealer (~20%); made items aim for ~65% like Figma.
@@ -34,6 +36,7 @@ export function PricingPanel({
   const [message, setMessage] = useState<{ ok: boolean; text: string }>();
   const [saving, startSave] = useTransition();
 
+  const unitLabel = pieces === 2 ? "per order (2 pcs)" : "per serving";
   const priceC = parsePesos(priceInput);
   const margin = priceC && cost !== null ? productMargin(priceC, cost) : null;
   const suggested = suggestedPrice(cost ?? 0, target);
@@ -62,8 +65,8 @@ export function PricingPanel({
           <Input id="selling-price" inputMode="decimal" value={priceInput} onChange={(e) => setPriceInput(e.target.value)} className="h-10 tabular-nums" />
         </div>
         <div className="grid grid-cols-2 gap-3" aria-live="polite">
-          <Metric label={resold ? "Dealer price" : "Production cost"} value={cost === null ? "No recipe" : formatCentavos(cost)} sub={resold ? "per unit" : "per serving"} tone="neutral" />
-          <Metric label="Gross profit" value={margin ? formatCentavos(margin.profit) : "—"} sub="per serving" tone={margin && margin.profit < 0 ? "danger" : "success"} />
+          <Metric label={resold ? "Dealer price" : "Production cost"} value={cost === null ? "No recipe" : formatCentavos(cost)} sub={resold ? "per unit" : unitLabel} tone="neutral" />
+          <Metric label="Gross profit" value={margin ? formatCentavos(margin.profit) : "—"} sub={unitLabel} tone={margin && margin.profit < 0 ? "danger" : "success"} />
           <Metric label="Gross margin" value={margin ? `${margin.marginPercent}%` : "—"} sub="profit ÷ price" tone={margin && margin.profit < 0 ? "danger" : "success"} />
           <Metric label="Food cost" value={margin ? `${margin.foodCostPercent}%` : "—"} sub="cost ÷ price" tone="brand" />
         </div>
