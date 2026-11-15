@@ -50,8 +50,9 @@ export type StockMovement = {
   change: number;
   /** Stock In only: centavos per big unit paid. */
   unitCost?: number;
-  /** Stock In: invoice no. Sale: order no. */
+  /** Stock In: receipt no., if any. Sale: order no. */
   reference?: string;
+  /** Stock In: where it was bought or made ("Palengke", "Shopee", "Made in-house", "Dan Eric"). */
   supplier?: string;
   /** Adjustment / waste reason. */
   note?: string;

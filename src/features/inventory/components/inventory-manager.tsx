@@ -59,6 +59,9 @@ export function InventoryManager({
       (statusId === "all" || stockStatus(i) === statusId) &&
       i.name.toLowerCase().includes(search),
   );
+  // Movements are newest first, so the first Stock In per item is where it was last bought.
+  const lastPlace: Record<string, string> = {};
+  for (const m of movements) if (m.type === "stock-in" && m.supplier) lastPlace[m.itemId] ??= m.supplier;
   const itemName = (id: string) => items.find((i) => i.id === id)?.name ?? "Removed item";
   const itemUnit = (id: string) => items.find((i) => i.id === id)?.unit ?? "pcs";
 
@@ -212,7 +215,7 @@ export function InventoryManager({
       </Tabs>
 
       {dialog?.kind === "movement" && (
-        <MovementDialog open initial={dialog} items={items} usedBy={usedBy} onClose={() => setDialog(null)} />
+        <MovementDialog open initial={dialog} items={items} usedBy={usedBy} lastPlace={lastPlace} onClose={() => setDialog(null)} />
       )}
       {dialog?.kind === "add" && <AddItemDialog open onClose={() => setDialog(null)} />}
     </div>

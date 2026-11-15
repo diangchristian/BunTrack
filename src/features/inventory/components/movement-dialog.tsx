@@ -29,19 +29,22 @@ export function MovementDialog({
   initial,
   items,
   usedBy,
+  lastPlace,
   onClose,
 }: {
   open: boolean;
   initial: { itemId?: string; type: FormType };
   items: InventoryItem[];
   usedBy: Record<string, string[]>;
+  /** itemId → where it was last bought, from movement history. */
+  lastPlace: Record<string, string>;
   onClose: () => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-lg">
         {/* Mounted only while open, so each movement starts fresh. */}
-        <MovementForm initial={initial} items={items} usedBy={usedBy} onDone={onClose} />
+        <MovementForm initial={initial} items={items} usedBy={usedBy} lastPlace={lastPlace} onDone={onClose} />
       </DialogContent>
     </Dialog>
   );
@@ -51,11 +54,13 @@ function MovementForm({
   initial,
   items,
   usedBy,
+  lastPlace,
   onDone,
 }: {
   initial: { itemId?: string; type: FormType };
   items: InventoryItem[];
   usedBy: Record<string, string[]>;
+  lastPlace: Record<string, string>;
   onDone: () => void;
 }) {
   const [state, formAction, saving] = useActionState(async (prev: InventoryFormState, formData: FormData) => {
@@ -131,15 +136,22 @@ function MovementForm({
       </Field>
 
       {type === "stock-in" && (
-        <Field label="Supplier" htmlFor="supplier" error={errors.supplier?.[0]}>
+        <Field label="Bought from" htmlFor="supplier" error={errors.supplier?.[0]}>
           <Input
             id="supplier"
             name="supplier"
-            key={item?.category}
-            defaultValue={item?.category === "Ice Cream (Dan Eric)" ? "Dan Eric" : ""}
-            placeholder="e.g. Metro Meat Supply"
+            key={item?.id}
+            // Each item is usually bought from the same place, so start with the last one.
+            defaultValue={(item && lastPlace[item.id]) ?? (item?.category === "Ice Cream (Dan Eric)" ? "Dan Eric" : "")}
+            placeholder="e.g. Palengke, Shopee, Made in-house"
+            list="places"
             className="h-10"
           />
+          <datalist id="places">
+            {[...new Set([...Object.values(lastPlace), "Palengke", "Made in-house", "Shopee", "Lazada", "Dan Eric"])].map((place) => (
+              <option key={place} value={place} />
+            ))}
+          </datalist>
         </Field>
       )}
 
@@ -162,8 +174,8 @@ function MovementForm({
 
       <div className="grid gap-3 sm:grid-cols-2">
         {type === "stock-in" ? (
-          <Field label="Invoice / reference no." htmlFor="reference" error={errors.reference?.[0]}>
-            <Input id="reference" name="reference" placeholder="e.g. INV-2041" maxLength={40} aria-invalid={!!errors.reference} className="h-10" />
+          <Field label="Receipt no. (optional)" htmlFor="reference" error={errors.reference?.[0]}>
+            <Input id="reference" name="reference" placeholder="Leave blank for market buys" maxLength={40} className="h-10" />
           </Field>
         ) : (
           <Field label="Reason" htmlFor="note" error={errors.note?.[0]}>

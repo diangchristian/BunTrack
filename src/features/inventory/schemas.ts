@@ -40,8 +40,8 @@ export function movementFormSchema(unit: UnitId) {
 
       const unitCost = v.type === "stock-in" ? parsePesos(v.unitCost) : undefined;
       if (v.type === "stock-in") {
+        // No reference check: market and store buys usually have no invoice or receipt number.
         if (unitCost === null) issue("unitCost", "Enter the price paid per unit, like 33.50");
-        if (!v.reference) issue("reference", "Invoice number is required for Stock In");
       } else if (!v.note) {
         issue("note", "Say why, e.g. weekly count or spoiled");
       }

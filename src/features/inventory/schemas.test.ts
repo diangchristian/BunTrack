@@ -3,21 +3,21 @@ import { test } from "node:test";
 
 import { movementFormSchema } from "./schemas";
 
-const stockIn = { type: "stock-in", itemId: "beef", quantity: "50", unitCost: "33.50", reference: " INV-204 ", supplier: "Metro Meat", note: "", date: "2026-11-16" };
+const stockIn = { type: "stock-in", itemId: "buns", quantity: "50", unitCost: "8.50", reference: " OR-204 ", supplier: "Bakery on Rizal St.", note: "", date: "2026-11-16" };
 
 test("Stock In: big-unit text becomes small-unit integers and centavos", () => {
   const result = movementFormSchema("kg").safeParse({ ...stockIn, quantity: "2.5" });
   assert.ok(result.success);
   assert.deepEqual(
     { quantity: result.data.quantity, unitCost: result.data.unitCost, reference: result.data.reference },
-    { quantity: 2500, unitCost: 3350, reference: "INV-204" },
+    { quantity: 2500, unitCost: 850, reference: "OR-204" },
   );
 });
 
-test("Stock In needs an invoice number, a positive amount and a unit cost", () => {
-  const result = movementFormSchema("pcs").safeParse({ ...stockIn, reference: " ", quantity: "0", unitCost: "" });
+test("Stock In needs a positive amount and the price paid", () => {
+  const result = movementFormSchema("pcs").safeParse({ ...stockIn, quantity: "0", unitCost: "" });
   assert.equal(result.success, false);
-  assert.deepEqual(result.error!.issues.map((i) => i.path[0]).sort(), ["quantity", "reference", "unitCost"]);
+  assert.deepEqual(result.error!.issues.map((i) => i.path[0]).sort(), ["quantity", "unitCost"]);
 });
 
 test("pieces must be whole numbers", () => {
@@ -40,4 +40,9 @@ test("the date must be a real day, not in the future", () => {
     const result = movementFormSchema("pcs").safeParse({ ...stockIn, date });
     assert.equal(result.success, false, date);
   }
+});
+
+test("market buys have no receipt: the reference is optional", () => {
+  const result = movementFormSchema("pcs").safeParse({ ...stockIn, reference: "", supplier: "Palengke" });
+  assert.ok(result.success);
 });
