@@ -3,7 +3,9 @@
 import { refresh } from "next/cache";
 import { z } from "zod";
 
+import { logActivity } from "@/features/activity/log";
 import { canManageStore } from "@/features/auth/queries";
+import { formatCentavos } from "@/lib/format";
 import { inventoryStore } from "@/features/inventory/store";
 import { priceSchema, productFormSchema } from "./schemas";
 import { productStore } from "./store";
@@ -30,7 +32,21 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
 
   const id = formData.get("id");
   if (typeof id === "string" && id) {
-    if (!productStore.update(id, parsed.data)) return { error: "This product no longer exists." };
+    const before = productStore.list().find((p) => p.id === id);
+    if (!before || !productStore.update(id, parsed.data)) return { error: "This product no longer exists." };
+    const changes = [
+      before.price !== parsed.data.price && `Price ${formatCentavos(before.price)} → ${formatCentavos(parsed.data.price)}`,
+      before.available !== parsed.data.available && (parsed.data.available ? "Switched on for sale" : "Switched off"),
+      before.name !== parsed.data.name && `Renamed from ${before.name}`,
+      before.category !== parsed.data.category && `Category ${before.category} → ${parsed.data.category}`,
+      before.pieces !== parsed.data.pieces && (parsed.data.pieces === 2 ? "Now Buy 1 Take 1" : "No longer Buy 1 Take 1"),
+    ].filter(Boolean);
+    await logActivity({
+      module: "Products",
+      action: before.price !== parsed.data.price ? "Price updated" : "Product updated",
+      record: parsed.data.name,
+      change: changes.join(" · ") || "Details edited",
+    });
   } else {
     const created = productStore.create(parsed.data);
     if (created.category === "iceCream") {
@@ -39,6 +55,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
       const item = inventoryStore.addItem({ name: created.name, category: "Ice Cream (Dan Eric)", unit: "pcs", quantity: 0, minimum: 0, unitCost: 0 });
       inventoryStore.setRecipe(created.id, [{ itemId: item.id, quantity: 1 }]);
     }
+    await logActivity({ module: "Products", action: "Product created", record: created.name, change: formatCentavos(created.price) });
   }
 
   refresh();
@@ -47,7 +64,9 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
 
 export async function archiveProduct(id: string): Promise<ProductFormState> {
   if (!(await canManageStore())) return { error: "You don't have permission to change products." };
-  if (!productStore.archive(id)) return { error: "This product no longer exists." };
+  const product = productStore.list().find((p) => p.id === id);
+  if (!product || !productStore.archive(id)) return { error: "This product no longer exists." };
+  await logActivity({ module: "Products", action: "Product archived", record: product.name });
   refresh();
   return { ok: true };
 }
@@ -57,7 +76,9 @@ export async function updateProductPrice(id: string, price: unknown): Promise<Pr
   if (!(await canManageStore())) return { error: "You don't have permission to change prices." };
   const parsed = priceSchema.safeParse(typeof price === "string" ? price : "");
   if (!parsed.success) return { error: parsed.error.issues[0].message };
-  if (!productStore.update(id, { price: parsed.data })) return { error: "This product no longer exists." };
+  const before = productStore.list().find((p) => p.id === id);
+  if (!before || !productStore.update(id, { price: parsed.data })) return { error: "This product no longer exists." };
+  await logActivity({ module: "Products", action: "Price updated", record: before.name, change: `${formatCentavos(before.price)} → ${formatCentavos(parsed.data)}` });
   refresh();
   return { ok: true };
 }

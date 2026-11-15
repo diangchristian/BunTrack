@@ -1,13 +1,25 @@
 import "server-only";
 
-// shortcut: there are no sessions yet, so everyone is the sample admin.
+import { connection } from "next/server";
+
+import { userStore } from "@/features/users/store";
+import type { User } from "@/features/users/types";
+
+// shortcut: there are no sessions yet, so everyone is the first active administrator.
 // Read the user from the Better Auth session once login is real.
-export async function getCurrentUser() {
-  return { firstName: "Maria", name: "Maria Reyes", role: "Administrator" };
+export async function getCurrentUser(): Promise<User & { firstName: string }> {
+  await connection(); // read at request time: accounts can change while the app runs
+  const user = userStore.list().find((u) => u.active && u.role === "Administrator")!;
+  return { ...user, firstName: user.name.split(" ")[0] };
 }
 
-/** Cashiers sell; only the owner/manager changes the menu, prices, recipes and stock records. */
+/** Owner and manager: menu, prices, recipes, stock records and expenses. */
 export async function canManageStore() {
-  const user = await getCurrentUser();
-  return user.role === "Administrator" || user.role === "Manager";
+  const { role } = await getCurrentUser();
+  return role === "Administrator" || role === "Manager";
+}
+
+/** Owner only: user accounts and settings. */
+export async function canAdminister() {
+  return (await getCurrentUser()).role === "Administrator";
 }

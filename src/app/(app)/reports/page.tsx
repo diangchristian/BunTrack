@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Coins, Info, Package, Receipt, ShoppingCart, TrendingDown, TrendingUp } from "lucide-react";
 
+import { NoAccess } from "@/components/no-access";
+import { canManageStore } from "@/features/auth/queries";
 import { SegmentedLinks } from "@/components/segmented-links";
 import { StatCard } from "@/components/stat-card";
 import { categoryLabel } from "@/features/products/types";
@@ -27,6 +29,8 @@ function vsPrevious(now: number, before: number, label: string) {
 }
 
 export default async function ReportsPage({ searchParams }: PageProps<"/reports">) {
+  if (!(await canManageStore())) return <NoAccess page="Sales & Reports" />;
+
   const { period, business } = parseReportParams(await searchParams);
   const { range, report, includesSample } = await getSalesReport(period, business);
   const { kpis } = report;

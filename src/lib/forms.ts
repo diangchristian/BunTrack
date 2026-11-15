@@ -11,3 +11,9 @@ export function keepValuesOnSubmit(dispatch: (formData: FormData) => void) {
     startTransition(() => dispatch(formData));
   };
 }
+
+/** A text field from submitted FormData; "" when it's missing or a file. */
+export function formText(formData: FormData, name: string) {
+  const value = formData.get(name);
+  return typeof value === "string" ? value : "";
+}

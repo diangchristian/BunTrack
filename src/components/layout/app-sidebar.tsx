@@ -34,37 +34,44 @@ const navGroups = [
   {
     label: "Main",
     items: [
-      { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { title: "Point of Sale", href: "/pos", icon: ShoppingCart },
+      { title: "Dashboard", href: "/dashboard", access: "manager", icon: LayoutDashboard },
+      { title: "Point of Sale", href: "/pos", access: "all", icon: ShoppingCart },
     ],
   },
   {
     label: "Menu & Stock",
     items: [
-      { title: "Products", href: "/products", icon: Package },
-      { title: "Inventory", href: "/inventory", icon: Boxes },
-      { title: "Costing & Pricing", href: "/costing", icon: Calculator },
+      { title: "Products", href: "/products", access: "manager", icon: Package },
+      { title: "Inventory", href: "/inventory", access: "manager", icon: Boxes },
+      { title: "Costing & Pricing", href: "/costing", access: "manager", icon: Calculator },
     ],
   },
   {
     label: "Business",
     items: [
-      { title: "Sales & Reports", href: "/reports", icon: ChartColumn },
-      { title: "Expenses", href: "/expenses", icon: Receipt },
+      { title: "Sales & Reports", href: "/reports", access: "manager", icon: ChartColumn },
+      { title: "Expenses", href: "/expenses", access: "manager", icon: Receipt },
     ],
   },
   {
     label: "Admin",
     items: [
-      { title: "Users & Roles", href: "/users", icon: Users },
-      { title: "Activity Logs", href: "/activity", icon: Activity },
-      { title: "Settings", href: "/settings", icon: Settings },
+      { title: "Users & Roles", href: "/users", access: "admin", icon: Users },
+      { title: "Activity Logs", href: "/activity", access: "manager", icon: Activity },
+      { title: "Settings", href: "/settings", access: "admin", icon: Settings },
     ],
   },
 ];
 
+/** Mirrors Users & Roles → Permissions. Hiding is only a convenience; each page checks on the server. */
+const canSee = (access: string, role: string) =>
+  !role || access === "all" || (access === "manager" && (role === "Administrator" || role === "Manager")) || (access === "admin" && role === "Administrator");
+
 export function AppSidebar({ user }: { user: { name: string; role: string } }) {
   const pathname = usePathname();
+  const visibleGroups = navGroups
+    .map((group) => ({ ...group, items: group.items.filter((item) => canSee(item.access, user.role)) }))
+    .filter((group) => group.items.length > 0);
   const initials = user.name
     .split(" ")
     .map((part) => part[0])
@@ -78,7 +85,7 @@ export function AppSidebar({ user }: { user: { name: string; role: string } }) {
       </SidebarHeader>
 
       <SidebarContent className="gap-2 px-2">
-        {navGroups.map((group) => (
+        {visibleGroups.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
               {group.label}

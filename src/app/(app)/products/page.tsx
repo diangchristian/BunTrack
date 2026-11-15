@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { AlertTriangle, CircleCheck, Package, TrendingUp } from "lucide-react";
 
+import { NoAccess } from "@/components/no-access";
+import { canManageStore } from "@/features/auth/queries";
 import { StatCard } from "@/components/stat-card";
 import { ProductsManager } from "@/features/products/components/products-manager";
 import { productMargin } from "@/features/products/costing";
@@ -10,6 +12,8 @@ import { categories, isOnSale } from "@/features/products/types";
 export const metadata: Metadata = { title: "Products" };
 
 export default async function ProductsPage() {
+  if (!(await canManageStore())) return <NoAccess page="Products" />;
+
   const products = await getProducts();
   const unavailable = products.filter((p) => !isOnSale(p));
   const costed = products.filter((p) => p.hasRecipe); // no recipe = no cost yet, so leave it out

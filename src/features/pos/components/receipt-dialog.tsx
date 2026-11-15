@@ -5,11 +5,12 @@ import { Check, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatCentavos } from "@/lib/format";
+import type { Settings } from "@/features/settings/schemas";
 import type { Receipt } from "../types";
 
 const methodLabels = { cash: "Cash", gcash: "GCash" };
 
-export function ReceiptDialog({ receipt, onNewOrder }: { receipt: Receipt | null; onNewOrder: () => void }) {
+export function ReceiptDialog({ receipt, shop, onNewOrder }: { receipt: Receipt | null; shop: Settings; onNewOrder: () => void }) {
   return (
     <Dialog open={receipt !== null} onOpenChange={(open) => !open && onNewOrder()}>
       <DialogContent className="sm:max-w-md" showCloseButton={false}>
@@ -28,7 +29,9 @@ export function ReceiptDialog({ receipt, onNewOrder }: { receipt: Receipt | null
 
             <div className="flex flex-col gap-2 rounded-[10px] border bg-secondary p-4 text-xs">
               <div>
-                <p className="text-sm font-semibold">Bun &amp; Patty Burger House</p>
+                <p className="text-sm font-semibold">{shop.shopName}</p>
+                {shop.address && <p className="text-muted-foreground">{shop.address}</p>}
+                {shop.contactNumber && <p className="text-muted-foreground">{shop.contactNumber}</p>}
                 <p className="text-muted-foreground">
                   {new Date(receipt.completedAt).toLocaleString("en-PH", {
                     dateStyle: "medium",
@@ -62,6 +65,7 @@ export function ReceiptDialog({ receipt, onNewOrder }: { receipt: Receipt | null
                   <span className="tabular-nums">{formatCentavos(receipt.change)}</span>
                 </p>
               </div>
+              {shop.receiptFooter && <p className="border-t border-input pt-2 text-center text-muted-foreground">{shop.receiptFooter}</p>}
             </div>
 
             <DialogFooter>

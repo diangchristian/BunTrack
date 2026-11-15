@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangle, Coins, Receipt, ShoppingCart, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 
+import { NoAccess } from "@/components/no-access";
 import { buttonVariants } from "@/components/ui/button";
-import { getCurrentUser } from "@/features/auth/queries";
+import { canManageStore, getCurrentUser } from "@/features/auth/queries";
 import { CategoryDonut, RevenueExpensesChart, SalesTrendChart } from "@/features/dashboard/components/charts";
 import { Panel } from "@/features/dashboard/components/panel";
 import { RecentTransactions } from "@/features/dashboard/components/recent-transactions";
@@ -15,6 +16,7 @@ import {
 } from "@/features/dashboard/components/side-panels";
 import { StatCard } from "@/components/stat-card";
 import { getDashboardData } from "@/features/dashboard/queries";
+import { settingsStore } from "@/features/settings/store";
 import { formatPeso } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +31,8 @@ function vsYesterday(now: number, before: number, as: "percent" | "count") {
 }
 
 export default async function DashboardPage() {
+  if (!(await canManageStore())) return <NoAccess page="The dashboard" />;
+
   const [user, data] = await Promise.all([getCurrentUser(), getDashboardData()]);
   const { today, yesterday } = data;
   const grossProfit = today.sales - today.cogs;
@@ -41,7 +45,7 @@ export default async function DashboardPage() {
         <div>
           <h1 className="text-[22px] leading-[30px] font-bold">Welcome back, {user.firstName}</h1>
           <p className="text-sm text-muted-foreground">
-            Here&apos;s how Bun &amp; Patty Burger House is doing today.
+            Here&apos;s how {settingsStore.get().shopName} is doing today.
           </p>
         </div>
         <Link href="/pos" className={cn(buttonVariants(), "h-10 px-4")}>

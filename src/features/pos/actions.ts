@@ -6,7 +6,8 @@ import { getCurrentUser } from "@/features/auth/queries";
 import { inventoryStore } from "@/features/inventory/store";
 import { getProducts } from "@/features/products/queries";
 import { orderStore } from "@/features/sales/store";
-import { manilaDate } from "@/lib/format";
+import { logActivity } from "@/features/activity/log";
+import { formatCentavos, manilaDate } from "@/lib/format";
 import { checkoutSchema } from "./schemas";
 import { checkoutOrder, piecesToDeduct, toMenuProduct } from "./service";
 import type { Receipt } from "./types";
@@ -46,6 +47,7 @@ export async function completeOrder(input: unknown): Promise<{ ok: true; receipt
       return { productId: l.productId, name: l.name, category: product.category, quantity: l.quantity, unitPrice: product.price, unitCost: product.cost };
     }),
   });
+  await logActivity({ module: "POS", action: "Completed order", record: `Order ${orderNumber}`, change: `${formatCentavos(result.order.total)} · ${parsed.data.method === "cash" ? "Cash" : "GCash"}` });
   refresh(); // the POS re-renders with the new servings left
 
   // shortcut: orders and stock movements are kept in memory. Once the database exists,

@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 
+import type { Settings } from "@/features/settings/schemas";
 import type { MenuProduct, Receipt } from "../types";
 import { OrderPanel, type OrderLine } from "./order-panel";
 import { PaymentDialog } from "./payment-dialog";
 import { ProductGrid } from "./product-grid";
 import { ReceiptDialog } from "./receipt-dialog";
 
-export function PosScreen({ menu, cashierName }: { menu: MenuProduct[]; cashierName: string }) {
+export function PosScreen({ menu, cashierName, shop }: { menu: MenuProduct[]; cashierName: string; shop: Settings }) {
   // productId -> quantity, in the order items were first added
   const [quantities, setQuantities] = useState(new Map<string, number>());
   const [paying, setPaying] = useState(false);
@@ -55,7 +56,7 @@ export function PosScreen({ menu, cashierName }: { menu: MenuProduct[]; cashierN
       </div>
 
       <PaymentDialog open={paying} onOpenChange={setPaying} lines={lines} onPaid={handlePaid} />
-      <ReceiptDialog receipt={receipt} onNewOrder={() => setReceipt(null)} />
+      <ReceiptDialog receipt={receipt} shop={shop} onNewOrder={() => setReceipt(null)} />
     </div>
   );
 }

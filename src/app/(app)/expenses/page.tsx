@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { CalendarDays, Coins, Info, Receipt, Tags, TrendingDown, TrendingUp } from "lucide-react";
 
+import { NoAccess } from "@/components/no-access";
+import { canManageStore } from "@/features/auth/queries";
 import { SegmentedLinks } from "@/components/segmented-links";
 import { StatCard } from "@/components/stat-card";
 import { ExpensesManager } from "@/features/expenses/components/expenses-manager";
@@ -17,6 +19,8 @@ const shortDate = formatShortDate;
 const peso = formatCentavos;
 
 export default async function ExpensesPage({ searchParams }: PageProps<"/expenses">) {
+  if (!(await canManageStore())) return <NoAccess page="Expenses" />;
+
   const { period, business } = parseReportParams(await searchParams);
   const { range, summary, revenue, costOfGoodsSold, includesSample } = await getExpensesPage(period, business);
   const net = revenue - costOfGoodsSold - summary.total;
