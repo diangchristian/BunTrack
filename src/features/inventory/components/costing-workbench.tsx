@@ -51,7 +51,7 @@ export function CostingWorkbench({
                 Product
               </span>
               <Select items={products.map((p) => ({ value: p.id, label: p.name }))} value={productId} onValueChange={(v) => v && setProductId(v)}>
-                <SelectTrigger aria-labelledby="product-label" className="h-10 w-full">
+                <SelectTrigger aria-labelledby="product-label" size="lg" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCentavos } from "@/lib/format";
 import { productMargin } from "../costing";
 import { categories, categoryLabel, isOnSale, unavailableReason, type CostedProduct } from "../types";
-import { ProductDrawer } from "./product-drawer";
+import { ProductDialog } from "./product-dialog";
 import { ProductImage } from "./product-image";
 
 const categoryFilter = [{ value: "all", label: "All categories" }, ...categories.map((c) => ({ value: c.id, label: c.label }))];
@@ -134,7 +134,7 @@ export function ProductsManager({ products }: { products: CostedProduct[] }) {
         Showing {visible.length} of {products.length} products
       </p>
 
-      <ProductDrawer open={editing !== undefined} product={editing ?? null} onClose={() => setEditing(undefined)} />
+      {editing !== undefined && <ProductDialog product={editing} onClose={() => setEditing(undefined)} />}
     </div>
   );
 }
@@ -152,7 +152,7 @@ function FilterSelect({
 }) {
   return (
     <Select items={items} value={value} onValueChange={(v) => v && onChange(v)}>
-      <SelectTrigger aria-label={label} className="h-10 w-44">
+      <SelectTrigger aria-label={label} size="lg" className="w-44">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

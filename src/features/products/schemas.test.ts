@@ -44,3 +44,12 @@ test("the Buy 1 Take 1 switch means 2 pieces per order", () => {
   assert.equal(productFormSchema.parse({ ...valid, b1t1: "on" }).pieces, 2);
   assert.equal(productFormSchema.parse({ ...valid, b1t1: null }).pieces, 1);
 });
+
+test("a product photo must be a small PNG, JPG or WebP; empty removes it", () => {
+  const photo = "data:image/webp;base64,UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==";
+  assert.equal(productFormSchema.parse({ ...valid, image: photo }).image, photo);
+  assert.equal(productFormSchema.parse({ ...valid, image: "" }).image, undefined);
+  assert.equal(productFormSchema.safeParse({ ...valid, image: "data:text/html;base64,PHNjcmlwdD4=" }).success, false);
+  assert.equal(productFormSchema.safeParse({ ...valid, image: "javascript:alert(1)" }).success, false);
+  assert.equal(productFormSchema.safeParse({ ...valid, image: `data:image/png;base64,${"A".repeat(800_000)}` }).success, false);
+});

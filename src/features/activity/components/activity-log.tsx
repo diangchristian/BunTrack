@@ -74,7 +74,7 @@ export function ActivityLog({ entries }: { entries: ActivityEntry[] }) {
           { label: "Period", items: ranges, value: range, set: setRange },
         ].map((f) => (
           <Select key={f.label} items={f.items} value={f.value} onValueChange={(v) => v && (f.set(v), setShown(PAGE))}>
-            <SelectTrigger aria-label={f.label} className="h-10 w-40">
+            <SelectTrigger aria-label={f.label} size="lg" className="w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

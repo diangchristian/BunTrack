@@ -124,7 +124,7 @@ function MovementForm({
             if (next) setUnitCost((next.unitCost / 100).toFixed(2));
           }}
         >
-          <SelectTrigger id="itemId" className="h-10 w-full">
+          <SelectTrigger id="itemId" size="lg" className="w-full">
             <SelectValue placeholder="Choose an item" />
           </SelectTrigger>
           <SelectContent>

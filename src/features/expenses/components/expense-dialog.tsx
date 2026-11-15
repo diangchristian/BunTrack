@@ -48,7 +48,7 @@ function ExpenseForm({ expense, onDone }: { expense: Expense | null; onDone: () 
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Category" htmlFor="exp-category" error={errors.category?.[0]}>
           <Select name="category" items={categoryItems} defaultValue={expense?.category ?? "Electricity"}>
-            <SelectTrigger id="exp-category" className="h-10 w-full">
+            <SelectTrigger id="exp-category" size="lg" className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -74,7 +74,7 @@ function ExpenseForm({ expense, onDone }: { expense: Expense | null; onDone: () 
         </Field>
         <Field label="For" htmlFor="exp-business" error={errors.business?.[0]}>
           <Select name="business" items={businessItems} defaultValue={expense?.business ?? "burger"}>
-            <SelectTrigger id="exp-business" className="h-10 w-full">
+            <SelectTrigger id="exp-business" size="lg" className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

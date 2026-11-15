@@ -29,6 +29,18 @@ export const productFormSchema = z
   // An unchecked checkbox is simply missing from the form data.
   available: z.literal("on").nullish().transform((v) => v === "on"),
   b1t1: z.literal("on").nullish(),
+  /**
+   * The photo as a data URL (resized in the browser to ~512px), or "" to remove it.
+   * shortcut: stored with the product in memory; move to file storage with the database.
+   */
+  image: z
+    .string()
+    .max(700_000, { error: "That photo is too large. Try a smaller one." })
+    .refine((v) => v === "" || /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(v), {
+      error: "Use a PNG, JPG or WebP photo",
+    })
+    .optional()
+    .transform((v) => v || undefined),
 })
   // Buy 1 Take 1 hands out 2 pieces per order.
   .transform(({ b1t1, ...values }) => ({ ...values, pieces: b1t1 === "on" ? 2 : 1 }));

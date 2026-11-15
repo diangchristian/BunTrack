@@ -13,7 +13,7 @@ const burger: Product = {
   pieces: 1,
   available: true,
 };
-const fields = { name: "Pint", description: "Dan Eric", category: "iceCream", price: 9200, pieces: 1, available: true } as const;
+const fields = { name: "Pint", description: "Dan Eric", category: "iceCream", price: 9200, pieces: 1, available: true, image: undefined } as const;
 
 test("a created product is listed with a new id", () => {
   const store = createProductStore([burger]);
@@ -22,12 +22,12 @@ test("a created product is listed with a new id", () => {
   assert.deepEqual(store.list().map((p) => p.name), ["Classic Cheeseburger", "Pint"]);
 });
 
-test("updating changes only the given fields and keeps the id and photo", () => {
-  const store = createProductStore([{ ...burger, image: "/products/burger.jpg" }]);
-  const updated = store.update(burger.id, { ...fields, name: "Cheeseburger", category: "burgers", price: 15900 });
-  assert.equal(updated?.id, burger.id);
-  assert.equal(updated?.image, "/products/burger.jpg");
-  assert.equal(store.list()[0].price, 15900);
+test("updating keeps the id; a price-only change keeps the photo, saving the form without one removes it", () => {
+  const store = createProductStore([{ ...burger, image: "data:image/webp;base64,AAAA" }]);
+  store.update(burger.id, { price: 15900 });
+  assert.deepEqual([store.list()[0].id, store.list()[0].price, store.list()[0].image], [burger.id, 15900, "data:image/webp;base64,AAAA"]);
+  store.update(burger.id, { ...fields, name: "Cheeseburger", category: "burgers", image: undefined });
+  assert.deepEqual([store.list()[0].name, store.list()[0].image], ["Cheeseburger", undefined]);
 });
 
 test("archived products disappear from the list; unknown ids are reported", () => {

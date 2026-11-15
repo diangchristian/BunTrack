@@ -46,7 +46,7 @@ function AddItemForm({ onDone }: { onDone: () => void }) {
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Category" htmlFor="item-category" error={errors.category?.[0]}>
           <Select name="category" items={categoryItems} defaultValue="Pantry">
-            <SelectTrigger id="item-category" className="h-10 w-full">
+            <SelectTrigger id="item-category" size="lg" className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -60,7 +60,7 @@ function AddItemForm({ onDone }: { onDone: () => void }) {
         </Field>
         <Field label="Measured in" htmlFor="item-unit" error={errors.unit?.[0]}>
           <Select name="unit" items={unitItems} defaultValue="pcs">
-            <SelectTrigger id="item-unit" className="h-10 w-full">
+            <SelectTrigger id="item-unit" size="lg" className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

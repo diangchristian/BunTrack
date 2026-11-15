@@ -27,6 +27,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     price: formData.get("price") ?? "",
     available: formData.get("available"),
     b1t1: formData.get("b1t1"),
+    image: formData.get("image") ?? "",
   });
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
 

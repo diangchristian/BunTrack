@@ -32,7 +32,7 @@ export function ProductImage({
       )}
     >
       {product.image ? (
-        <Image src={product.image} alt={product.name} fill sizes={sizes} className="object-cover" />
+        <Image src={product.image} alt={product.name} fill sizes={sizes} className="object-cover" unoptimized={product.image.startsWith("data:")} />
       ) : (
         <Icon className="size-[45%]" aria-hidden />
       )}

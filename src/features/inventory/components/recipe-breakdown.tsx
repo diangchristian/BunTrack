@@ -177,7 +177,7 @@ export function RecipeBreakdown({
       {draft && (
         <div className="flex flex-wrap items-end gap-2 rounded-[10px] border border-dashed p-3">
           <Select items={unused.map((i) => ({ value: i.id, label: i.name }))} value={adding.itemId} onValueChange={(v) => v && setAdding({ ...adding, itemId: v })}>
-            <SelectTrigger aria-label="Ingredient to add" className="h-9 w-52">
+            <SelectTrigger aria-label="Ingredient to add" size="lg" className="w-52">
               <SelectValue placeholder="Add an ingredient…" />
             </SelectTrigger>
             <SelectContent>
@@ -195,11 +195,11 @@ export function RecipeBreakdown({
               placeholder={addItem?.unit === "pcs" ? "1" : "15"}
               value={adding.quantity}
               onChange={(e) => setAdding({ ...adding, quantity: e.target.value.replace(/\D/g, "") })}
-              className="h-9 w-20 tabular-nums"
+              className="h-10 w-20 tabular-nums"
             />
             <span className="text-xs text-muted-foreground">{addItem ? units[addItem.unit].small : ""}</span>
           </span>
-          <Button variant="outline" size="sm" className="h-9" onClick={addLine} disabled={!addItem || !Number(adding.quantity)}>
+          <Button variant="outline" className="h-10" onClick={addLine} disabled={!addItem || !Number(adding.quantity)}>
             <Plus data-icon="inline-start" /> Add
           </Button>
         </div>

@@ -170,7 +170,7 @@ function UserDialog({ user, isSelf, onClose }: { user: User | null; isSelf: bool
               </>
             ) : (
               <Select name="role" items={roleItems} defaultValue={user?.role ?? "Family member"}>
-                <SelectTrigger id="user-role" className="h-10 w-full">
+                <SelectTrigger id="user-role" size="lg" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

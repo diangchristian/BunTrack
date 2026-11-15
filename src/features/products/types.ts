@@ -19,7 +19,7 @@ export type Product = {
   price: number;
   /** Pieces handed out per order: 1 normally, 2 for Buy 1 Take 1. The recipe is per piece. */
   pieces: number;
-  /** Path under /public, e.g. "/products/pint.jpg". Falls back to a category icon. */
+  /** Uploaded photo (data URL, resized to ~512px) or a path under /public. Falls back to a category icon. */
   image?: string;
   /** Switched on for sale by the owner. Sold-out is worked out from stock, not stored. */
   available: boolean;

@@ -238,7 +238,7 @@ function FilterSelect({
 }) {
   return (
     <Select items={items} value={value} onValueChange={(v) => v && onChange(v)}>
-      <SelectTrigger aria-label={label} className="h-10 w-48">
+      <SelectTrigger aria-label={label} size="lg" className="w-48">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
