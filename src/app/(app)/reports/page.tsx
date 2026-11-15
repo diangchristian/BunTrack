@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Coins, Info, Package, Receipt, ShoppingCart, TrendingDown, TrendingUp } from "lucide-react";
 
+import { SegmentedLinks } from "@/components/segmented-links";
 import { StatCard } from "@/components/stat-card";
 import { categoryLabel } from "@/features/products/types";
 import { ProductPerformance } from "@/features/sales/components/product-performance";
@@ -9,13 +9,12 @@ import { RevenueChart } from "@/features/sales/components/revenue-chart";
 import { TransactionHistory } from "@/features/sales/components/transaction-history";
 import { getSalesReport, parseReportParams } from "@/features/sales/queries";
 import { businesses, periods } from "@/features/sales/types";
-import { formatCentavos, formatPeso } from "@/lib/format";
+import { formatCentavos, formatPeso, formatShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Sales & Reports" };
 
-const shortDate = (d: string) =>
-  new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`));
+const shortDate = formatShortDate;
 
 function vsPrevious(now: number, before: number, label: string) {
   if (!before) return { text: `No sales ${label}`, kind: "neutral" as const };
@@ -44,8 +43,8 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Segmented label="Business" options={businesses.map((b) => ({ ...b, href: href({ business: b.id }) }))} active={business} />
-        <Segmented label="Period" options={periods.map((p) => ({ ...p, href: href({ period: p.id }) }))} active={period} />
+        <SegmentedLinks label="Business" options={businesses.map((b) => ({ ...b, href: href({ business: b.id }) }))} active={business} />
+        <SegmentedLinks label="Period" options={periods.map((p) => ({ ...p, href: href({ period: p.id }) }))} active={period} />
         <span className="text-xs text-muted-foreground">
           {range.from === range.to ? shortDate(range.from) : `${shortDate(range.from)} – ${shortDate(range.to)}`}, compared with {prevLabel}
         </span>
@@ -120,26 +119,6 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
         <TransactionHistory key={`${period}-${business}`} transactions={report.transactions} />
       </section>
     </div>
-  );
-}
-
-function Segmented({ label, options, active }: { label: string; options: { id: string; label: string; href: string }[]; active: string }) {
-  return (
-    <nav aria-label={label} className="flex gap-1 rounded-[10px] border bg-secondary p-1">
-      {options.map((o) => (
-        <Link
-          key={o.id}
-          href={o.href}
-          aria-current={o.id === active ? "page" : undefined}
-          className={cn(
-            "flex h-8 items-center rounded-md px-3 text-sm font-medium whitespace-nowrap text-muted-foreground hover:text-foreground",
-            o.id === active && "bg-background font-semibold text-foreground shadow-sm",
-          )}
-        >
-          {o.label}
-        </Link>
-      ))}
-    </nav>
   );
 }
 

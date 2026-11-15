@@ -8,7 +8,7 @@ export function parsePesos(value: string): number | null {
   return /^\d{1,6}(\.\d{1,2})?$/.test(trimmed) ? Math.round(Number(trimmed) * 100) : null;
 }
 
-const pesos = (label: string) =>
+export const pesos = (label: string) =>
   z.string().transform((value, ctx) => {
     const centavos = parsePesos(value);
     if (centavos === null) {

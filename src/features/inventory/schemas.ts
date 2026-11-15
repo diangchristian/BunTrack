@@ -1,14 +1,8 @@
 import { z } from "zod";
 
 import { parsePesos } from "@/features/products/schemas";
-import { manilaDate } from "@/lib/format";
+import { isRealPastDate } from "@/lib/format";
 import { itemCategories, units, type UnitId } from "./types";
-
-/** "2026-11-16" is a real calendar day (not 2026-02-30) and not after today in Manila. */
-function isRealPastDate(d: string) {
-  const parsed = new Date(`${d}T00:00:00Z`);
-  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(d) && d <= manilaDate();
-}
 
 const text = (max: number) => z.string().trim().max(max, { error: `Keep it under ${max} characters` });
 
