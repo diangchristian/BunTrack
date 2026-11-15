@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { formText } from "@/lib/forms";
 import { logActivity } from "@/features/activity/log";
-import { canManageStore, getCurrentUser } from "@/features/auth/queries";
+import { canUseStore, getCurrentUser } from "@/features/auth/queries";
 import { productStore } from "@/features/products/store";
 import { itemFormSchema, movementFormSchema } from "./schemas";
 import { inventoryStore } from "./store";
@@ -16,7 +16,7 @@ export type InventoryFormState = { ok?: boolean; error?: string; fieldErrors?: R
 
 /** Stock In / Adjustment / Waste from the movement dialog. */
 export async function recordStockMovement(_prev: InventoryFormState, formData: FormData): Promise<InventoryFormState> {
-  if (!(await canManageStore())) return { error: "You don't have permission to change stock." };
+  if (!(await canUseStore())) return { error: "You don't have permission to change stock." };
 
   const item = inventoryStore.items().find((i) => i.id === formText(formData, "itemId"));
   if (!item) return { fieldErrors: { itemId: ["Pick an item"] } };
@@ -47,7 +47,7 @@ export async function recordStockMovement(_prev: InventoryFormState, formData: F
 }
 
 export async function addInventoryItem(_prev: InventoryFormState, formData: FormData): Promise<InventoryFormState> {
-  if (!(await canManageStore())) return { error: "You don't have permission to add items." };
+  if (!(await canUseStore())) return { error: "You don't have permission to add items." };
 
   const parsed = itemFormSchema.safeParse(
     {
@@ -72,7 +72,7 @@ const recipeSchema = z
 
 /** Costing & Pricing → Save recipe. Quantities are per serving, in the item's small unit. */
 export async function saveRecipe(productId: string, lines: unknown): Promise<InventoryFormState> {
-  if (!(await canManageStore())) return { error: "You don't have permission to change recipes." };
+  if (!(await canUseStore())) return { error: "You don't have permission to change recipes." };
   if (!productStore.list().some((p) => p.id === productId)) return { error: "This product no longer exists." };
 
   const parsed = recipeSchema.safeParse(lines);

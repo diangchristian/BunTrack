@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { NoAccess } from "@/components/no-access";
-import { canManageStore } from "@/features/auth/queries";
+import { canUseStore } from "@/features/auth/queries";
 import { CostingWorkbench } from "@/features/inventory/components/costing-workbench";
 import { getInventory } from "@/features/inventory/queries";
 import { getProducts } from "@/features/products/queries";
@@ -9,7 +9,7 @@ import { getProducts } from "@/features/products/queries";
 export const metadata: Metadata = { title: "Costing & Pricing" };
 
 export default async function CostingPage({ searchParams }: PageProps<"/costing">) {
-  if (!(await canManageStore())) return <NoAccess page="Costing & Pricing" />;
+  if (!(await canUseStore())) return <NoAccess page="Costing & Pricing" />;
 
   const [{ product }, products, { items, recipes }] = await Promise.all([searchParams, getProducts(), getInventory()]);
 

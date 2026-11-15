@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AlertTriangle, Boxes, CircleCheck, Coins, XCircle } from "lucide-react";
 
 import { NoAccess } from "@/components/no-access";
-import { canManageStore } from "@/features/auth/queries";
+import { canUseStore } from "@/features/auth/queries";
 import { StatCard } from "@/components/stat-card";
 import { InventoryManager } from "@/features/inventory/components/inventory-manager";
 import { stockStatus, stockValue } from "@/features/inventory/costing";
@@ -12,7 +12,7 @@ import { formatPeso } from "@/lib/format";
 export const metadata: Metadata = { title: "Inventory" };
 
 export default async function InventoryPage() {
-  if (!(await canManageStore())) return <NoAccess page="Inventory" />;
+  if (!(await canUseStore())) return <NoAccess page="Inventory" />;
 
   const { items, movements, usedBy } = await getInventory();
   const count = (s: ReturnType<typeof stockStatus>) => items.filter((i) => stockStatus(i) === s);

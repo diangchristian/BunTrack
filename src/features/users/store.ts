@@ -47,8 +47,8 @@ export function createUserStore(seed: User[]) {
 // Better Auth user table once real sign-in exists. Replace these with your family's names.
 const sampleUsers: User[] = [
   { id: "maria", name: "Maria Reyes", email: "maria@bunandpatty.ph", role: "Administrator", active: true },
-  { id: "carlo", name: "Carlo Mendoza", email: "carlo@bunandpatty.ph", role: "Manager", active: true },
-  { id: "ana", name: "Ana Cruz", email: "ana@bunandpatty.ph", role: "Cashier", active: true },
+  { id: "carlo", name: "Carlo Mendoza", email: "carlo@bunandpatty.ph", role: "Family member", active: true },
+  { id: "ana", name: "Ana Cruz", email: "ana@bunandpatty.ph", role: "Family member", active: true },
 ];
 
 const globalForStore = globalThis as unknown as { userStore?: ReturnType<typeof createUserStore> };

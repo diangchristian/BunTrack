@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { formText } from "@/lib/forms";
 import { logActivity } from "@/features/activity/log";
-import { canManageStore, getCurrentUser } from "@/features/auth/queries";
+import { canUseStore, getCurrentUser } from "@/features/auth/queries";
 import { formatCentavos } from "@/lib/format";
 import { expenseFormSchema } from "./schemas";
 import { expenseStore } from "./store";
@@ -14,7 +14,7 @@ export type ExpenseFormState = { ok?: boolean; error?: string; fieldErrors?: Rec
 
 /** Records an expense, or edits one when the form includes an id. */
 export async function saveExpense(_prev: ExpenseFormState, formData: FormData): Promise<ExpenseFormState> {
-  if (!(await canManageStore())) return { error: "You don't have permission to record expenses." };
+  if (!(await canUseStore())) return { error: "You don't have permission to record expenses." };
 
   const parsed = expenseFormSchema.safeParse(
     Object.fromEntries(["category", "business", "amount", "date", "paidVia", "description"].map((k) => [k, formText(formData, k)])),
@@ -41,7 +41,7 @@ export async function saveExpense(_prev: ExpenseFormState, formData: FormData): 
 }
 
 export async function deleteExpense(id: string): Promise<ExpenseFormState> {
-  if (!(await canManageStore())) return { error: "You don't have permission to delete expenses." };
+  if (!(await canUseStore())) return { error: "You don't have permission to delete expenses." };
   const expense = expenseStore.list().find((e) => e.id === id);
   if (!expense || !expenseStore.remove(id)) {
     refresh(); // already deleted elsewhere; drop the stale row

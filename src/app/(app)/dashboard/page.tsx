@@ -4,7 +4,7 @@ import { AlertTriangle, Coins, Receipt, ShoppingCart, TrendingDown, TrendingUp, 
 
 import { NoAccess } from "@/components/no-access";
 import { buttonVariants } from "@/components/ui/button";
-import { canManageStore, getCurrentUser } from "@/features/auth/queries";
+import { canUseStore, getCurrentUser } from "@/features/auth/queries";
 import { CategoryDonut, RevenueExpensesChart, SalesTrendChart } from "@/features/dashboard/components/charts";
 import { Panel } from "@/features/dashboard/components/panel";
 import { RecentTransactions } from "@/features/dashboard/components/recent-transactions";
@@ -31,7 +31,7 @@ function vsYesterday(now: number, before: number, as: "percent" | "count") {
 }
 
 export default async function DashboardPage() {
-  if (!(await canManageStore())) return <NoAccess page="The dashboard" />;
+  if (!(await canUseStore())) return <NoAccess page="The dashboard" />;
 
   const [user, data] = await Promise.all([getCurrentUser(), getDashboardData()]);
   const { today, yesterday } = data;

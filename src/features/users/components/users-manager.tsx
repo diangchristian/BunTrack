@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { saveUser, setUserActive, type UserFormState } from "../actions";
 import { roles, type User } from "../types";
 
-const roleBadge = { Administrator: "brand", Manager: "neutral", Cashier: "success" } as const;
+const roleBadge = { Administrator: "brand", "Family member": "success" } as const;
 const initials = (name: string) => name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
 
 export function UsersManager({ users, currentUserId }: { users: User[]; currentUserId: string }) {
@@ -169,7 +169,7 @@ function UserDialog({ user, isSelf, onClose }: { user: User | null; isSelf: bool
                 <p className="text-sm text-muted-foreground">{user!.role} (you can&apos;t change your own role)</p>
               </>
             ) : (
-              <Select name="role" items={roleItems} defaultValue={user?.role ?? "Cashier"}>
+              <Select name="role" items={roleItems} defaultValue={user?.role ?? "Family member"}>
                 <SelectTrigger id="user-role" className="h-10 w-full">
                   <SelectValue />
                 </SelectTrigger>

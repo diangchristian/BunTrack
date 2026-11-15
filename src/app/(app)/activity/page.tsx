@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 
 import { NoAccess } from "@/components/no-access";
-import { canManageStore } from "@/features/auth/queries";
+import { canUseStore } from "@/features/auth/queries";
 import { ActivityLog } from "@/features/activity/components/activity-log";
 import { activityStore } from "@/features/activity/store";
 
 export const metadata: Metadata = { title: "Activity Logs" };
 
 export default async function ActivityPage() {
-  if (!(await canManageStore())) return <NoAccess page="Activity Logs" />;
+  if (!(await canUseStore())) return <NoAccess page="Activity Logs" />;
 
   await connection(); // always the latest entries
 

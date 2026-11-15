@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 
 import { logActivity } from "@/features/activity/log";
-import { canManageStore } from "@/features/auth/queries";
+import { canUseStore } from "@/features/auth/queries";
 import { formatCentavos } from "@/lib/format";
 import { inventoryStore } from "@/features/inventory/store";
 import { priceSchema, productFormSchema } from "./schemas";
@@ -18,7 +18,7 @@ export type ProductFormState = {
 
 /** Creates a product, or updates one when the form includes an id. */
 export async function saveProduct(_prev: ProductFormState, formData: FormData): Promise<ProductFormState> {
-  if (!(await canManageStore())) return { error: "You don't have permission to change products." };
+  if (!(await canUseStore())) return { error: "You don't have permission to change products." };
 
   const parsed = productFormSchema.safeParse({
     name: formData.get("name") ?? "",
@@ -63,7 +63,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
 }
 
 export async function archiveProduct(id: string): Promise<ProductFormState> {
-  if (!(await canManageStore())) return { error: "You don't have permission to change products." };
+  if (!(await canUseStore())) return { error: "You don't have permission to change products." };
   const product = productStore.list().find((p) => p.id === id);
   if (!product || !productStore.archive(id)) return { error: "This product no longer exists." };
   await logActivity({ module: "Products", action: "Product archived", record: product.name });
@@ -73,7 +73,7 @@ export async function archiveProduct(id: string): Promise<ProductFormState> {
 
 /** Costing & Pricing → Save price. `price` is the pesos text the user typed ("149.50"), validated here. */
 export async function updateProductPrice(id: string, price: unknown): Promise<ProductFormState> {
-  if (!(await canManageStore())) return { error: "You don't have permission to change prices." };
+  if (!(await canUseStore())) return { error: "You don't have permission to change prices." };
   const parsed = priceSchema.safeParse(typeof price === "string" ? price : "");
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const before = productStore.list().find((p) => p.id === id);

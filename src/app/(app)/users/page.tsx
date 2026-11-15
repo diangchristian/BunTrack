@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { Check, Minus, ShieldCheck, ShoppingCart, UserCog } from "lucide-react";
+import { Check, Minus, ShieldCheck, Users } from "lucide-react";
 
 import { NoAccess } from "@/components/no-access";
 import { canAdminister, getCurrentUser } from "@/features/auth/queries";
@@ -11,8 +11,8 @@ import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Users & Roles" };
 
-const roleIcon = { Administrator: ShieldCheck, Manager: UserCog, Cashier: ShoppingCart };
-const roleTone = { Administrator: "bg-brand-soft text-brand-strong", Manager: "bg-neutral-soft text-foreground", Cashier: "bg-success-soft text-success-strong" };
+const roleIcon = { Administrator: ShieldCheck, "Family member": Users };
+const roleTone = { Administrator: "bg-brand-soft text-brand-strong", "Family member": "bg-success-soft text-success-strong" };
 
 export default async function UsersPage() {
   if (!(await canAdminister())) return <NoAccess page="Users & Roles" />;
@@ -27,7 +27,7 @@ export default async function UsersPage() {
         <p className="text-sm text-muted-foreground">Who in the family can use BunTrack, and what each role can do. Changes are recorded in Activity Logs.</p>
       </div>
 
-      <section aria-label="Roles" className="grid gap-4 md:grid-cols-3">
+      <section aria-label="Roles" className="grid gap-4 md:grid-cols-2">
         {roles.map((r) => {
           const Icon = roleIcon[r.id];
           const count = users.filter((u) => u.role === r.id && u.active).length;
@@ -65,7 +65,7 @@ export default async function UsersPage() {
                 <th className="py-2 text-left font-medium">Module</th>
                 {roles.map((r) => (
                   <th key={r.id} className="w-16 py-2 text-center font-medium">
-                    {r.id === "Administrator" ? "Admin" : r.id}
+                    {r.id === "Administrator" ? "Admin" : "Family"}
                   </th>
                 ))}
               </tr>
@@ -88,7 +88,8 @@ export default async function UsersPage() {
             </tbody>
           </table>
           <p className="text-xs text-muted-foreground">
-            Until real sign-in is connected, everyone uses the app as the first active administrator.
+            Family members can change prices, stock, recipes and expenses; every change is recorded in Activity Logs. Until real sign-in is
+            connected, everyone uses the app as the first active administrator.
           </p>
         </section>
       </div>

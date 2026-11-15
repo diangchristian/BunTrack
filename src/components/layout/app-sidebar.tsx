@@ -65,7 +65,7 @@ const navGroups = [
 
 /** Mirrors Users & Roles → Permissions. Hiding is only a convenience; each page checks on the server. */
 const canSee = (access: string, role: string) =>
-  !role || access === "all" || (access === "manager" && (role === "Administrator" || role === "Manager")) || (access === "admin" && role === "Administrator");
+  !role || access !== "admin" || role === "Administrator";
 
 export function AppSidebar({ user }: { user: { name: string; role: string } }) {
   const pathname = usePathname();

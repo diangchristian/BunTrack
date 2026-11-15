@@ -13,10 +13,12 @@ export async function getCurrentUser(): Promise<User & { firstName: string }> {
   return { ...user, firstName: user.name.split(" ")[0] };
 }
 
-/** Owner and manager: menu, prices, recipes, stock records and expenses. */
-export async function canManageStore() {
-  const { role } = await getCurrentUser();
-  return role === "Administrator" || role === "Manager";
+/**
+ * Any active account (owner or family member) can use every page except Users & Settings.
+ * Kept as a check so actions stay protected once real sign-in exists.
+ */
+export async function canUseStore() {
+  return (await getCurrentUser()).active;
 }
 
 /** Owner only: user accounts and settings. */

@@ -1,21 +1,15 @@
 export const roles = [
-  { id: "Administrator", description: "The owner. Everything, including users and settings." },
-  { id: "Manager", description: "Menu, prices, recipes, stock, expenses and reports." },
-  { id: "Cashier", description: "The POS only: take orders and payments." },
+  { id: "Administrator", description: "The owner. Everything, including accounts and settings." },
+  { id: "Family member", description: "Every page except Users & Roles and Settings. All changes are recorded in Activity Logs." },
 ] as const;
 
 export type Role = (typeof roles)[number]["id"];
 
 /** What each role can do. The server enforces this; the Users page shows it. */
 export const permissions: { module: string; roles: Role[] }[] = [
-  { module: "Point of Sale", roles: ["Administrator", "Manager", "Cashier"] },
-  { module: "Dashboard", roles: ["Administrator", "Manager"] },
-  { module: "Products & pricing", roles: ["Administrator", "Manager"] },
-  { module: "Inventory & stock", roles: ["Administrator", "Manager"] },
-  { module: "Costing & recipes", roles: ["Administrator", "Manager"] },
-  { module: "Expenses", roles: ["Administrator", "Manager"] },
-  { module: "Sales reports", roles: ["Administrator", "Manager"] },
-  { module: "Activity logs", roles: ["Administrator", "Manager"] },
+  ...["Point of Sale", "Dashboard", "Products & pricing", "Inventory & stock", "Costing & recipes", "Expenses", "Sales reports", "Activity logs"].map(
+    (module) => ({ module, roles: ["Administrator", "Family member"] as Role[] }),
+  ),
   { module: "Users & roles", roles: ["Administrator"] },
   { module: "Settings", roles: ["Administrator"] },
 ];
