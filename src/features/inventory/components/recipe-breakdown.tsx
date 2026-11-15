@@ -71,22 +71,12 @@ export function RecipeBreakdown({
                 : "Per serving · unit costs pulled from Inventory"}
           </p>
         </div>
-        {draft === null ? (
-          // With no recipe yet, the Add recipe button sits in the empty table instead.
-          recipe.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={() => setDraft(recipe)}>
-              <Pencil data-icon="inline-start" /> Edit recipe
-            </Button>
-          )
-        ) : (
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => (setDraft(null), setError(undefined))} disabled={saving}>
-              Cancel
-            </Button>
-            <Button size="sm" onClick={save} disabled={saving}>
-              {saving ? "Saving…" : "Save recipe"}
-            </Button>
-          </div>
+        {/* With no recipe yet, the Add recipe button sits in the empty table instead; while
+            editing, Cancel and Save sit under the ingredient picker. */}
+        {draft === null && recipe.length > 0 && (
+          <Button variant="ghost" size="sm" onClick={() => setDraft(recipe)}>
+            <Pencil data-icon="inline-start" /> Edit recipe
+          </Button>
         )}
       </div>
 
@@ -221,6 +211,17 @@ export function RecipeBreakdown({
         <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive">
           {error}
         </p>
+      )}
+
+      {draft && (
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" className="h-10" onClick={() => (setDraft(null), setError(undefined))} disabled={saving}>
+            Cancel
+          </Button>
+          <Button className="h-10 px-4 font-semibold" onClick={save} disabled={saving}>
+            {saving ? "Saving…" : "Save recipe"}
+          </Button>
+        </div>
       )}
 
       <p className="flex gap-2 rounded-[10px] border bg-secondary p-3 text-xs text-muted-foreground">
