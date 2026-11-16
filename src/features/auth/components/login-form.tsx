@@ -13,7 +13,7 @@ export function LoginForm() {
   return (
     <form action={formAction} noValidate className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email" className="text-xs font-semibold text-muted-foreground">
+        <Label htmlFor="email" className="text-sm font-semibold text-muted-foreground">
           Email
         </Label>
         <Input
@@ -36,7 +36,7 @@ export function LoginForm() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="password" className="text-xs font-semibold text-muted-foreground">
+        <Label htmlFor="password" className="text-sm font-semibold text-muted-foreground">
           Password
         </Label>
         <Input

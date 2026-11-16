@@ -58,7 +58,9 @@ function PaymentForm({
   const received = Math.round(Number(cashInput) * 100) || 0;
   const short = method === "cash" && received < total;
 
-  function submit() {
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (short || pending) return;
     setError(undefined);
     startTransition(async () => {
       const result = await completeOrder({
@@ -72,22 +74,23 @@ function PaymentForm({
   }
 
   return (
-    <>
+    // A form, so pressing Enter in the cash field completes the payment.
+    <form onSubmit={submit} className="flex flex-col gap-4">
       <DialogHeader>
-        <DialogTitle className="text-lg font-bold">Collect Payment</DialogTitle>
+        <DialogTitle className="text-lg font-bold">Collect payment</DialogTitle>
         <DialogDescription>
           {itemCount} {itemCount === 1 ? "item" : "items"}
         </DialogDescription>
       </DialogHeader>
 
       <div className="flex flex-col items-center gap-0.5 rounded-[14px] bg-brand-soft p-4">
-        <span className="text-xs font-semibold text-brand-strong">Amount Due</span>
+        <span className="text-xs font-semibold text-brand-strong">Amount due</span>
         <span className="text-[28px] leading-9 font-bold tabular-nums">{formatCentavos(total)}</span>
       </div>
 
       <div className="flex flex-col gap-2">
-        <span className="text-xs font-semibold text-muted-foreground" id="method-label">
-          Payment Method
+        <span className="text-sm font-semibold text-muted-foreground" id="method-label">
+          Payment method
         </span>
         <div className="grid grid-cols-2 gap-2" role="group" aria-labelledby="method-label">
           {methods.map(({ id, label, icon: Icon }) => (
@@ -111,8 +114,8 @@ function PaymentForm({
       {method === "cash" && (
         <>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="cash-received" className="text-xs font-semibold text-muted-foreground">
-              Amount Received (₱)
+            <Label htmlFor="cash-received" className="text-sm font-semibold text-muted-foreground">
+              Amount received (₱)
             </Label>
             <Input
               id="cash-received"
@@ -132,7 +135,7 @@ function PaymentForm({
                   key={amount}
                   type="button"
                   variant="outline"
-                  className={cn("h-9 flex-1", received === amount && "border-primary bg-brand-soft text-brand-strong")}
+                  className={cn("h-11 flex-1", received === amount && "border-primary bg-brand-soft text-brand-strong")}
                   onClick={() => setCashInput(String(amount / 100))}
                 >
                   {i === 0 ? "Exact" : formatCentavos(amount).replace(".00", "")}
@@ -166,10 +169,10 @@ function PaymentForm({
         <Button type="button" variant="outline" className="h-11" onClick={onBack} disabled={pending}>
           Back
         </Button>
-        <Button type="button" variant="success" className="h-11 font-semibold" onClick={submit} disabled={short || pending}>
-          {pending ? "Completing…" : "Complete Payment"}
+        <Button type="submit" variant="success" className="h-11 font-semibold" disabled={short || pending}>
+          {pending ? "Completing…" : "Complete payment"}
         </Button>
       </DialogFooter>
-    </>
+    </form>
   );
 }

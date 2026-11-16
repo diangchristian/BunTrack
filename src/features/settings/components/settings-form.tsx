@@ -66,7 +66,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
             Discard changes
           </Button>
           <Button type="submit" className="h-10 px-5 font-semibold" disabled={saving}>
-            <Check data-icon="inline-start" /> {saving ? "Saving…" : "Save Changes"}
+            <Check data-icon="inline-start" /> {saving ? "Saving…" : "Save changes"}
           </Button>
         </div>
       </div>

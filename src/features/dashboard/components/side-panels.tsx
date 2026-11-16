@@ -78,10 +78,10 @@ export function UnavailableProducts({ items }: { items: DashboardData["unavailab
 }
 
 const quickActions = [
-  { label: "Create Order", href: "/pos", icon: ShoppingCart, primary: true },
-  { label: "Add Product", href: "/products", icon: Plus },
-  { label: "Add Inventory", href: "/inventory", icon: Boxes },
-  { label: "Record Expense", href: "/expenses", icon: Receipt },
+  { label: "Create order", href: "/pos", icon: ShoppingCart, primary: true },
+  { label: "Add product", href: "/products", icon: Plus },
+  { label: "Add inventory", href: "/inventory", icon: Boxes },
+  { label: "Record expense", href: "/expenses", icon: Receipt },
 ];
 
 export function QuickActions() {

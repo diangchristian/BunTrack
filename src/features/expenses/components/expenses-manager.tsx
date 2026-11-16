@@ -55,7 +55,7 @@ export function ExpensesManager({ expenses }: { expenses: Expense[] }) {
           <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search expenses…" aria-label="Search expenses" className="h-10 pl-9" />
         </div>
         <Button className="h-10 px-4" onClick={() => setEditing(null)}>
-          <Plus data-icon="inline-start" /> Record Expense
+          <Plus data-icon="inline-start" /> Record expense
         </Button>
       </div>
 

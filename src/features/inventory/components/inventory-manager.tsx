@@ -36,6 +36,8 @@ const statusFilter = [
   { value: "out", label: "Out of Stock" },
 ];
 
+const HISTORY_PAGE_SIZE = 50;
+
 type DialogState = { kind: "movement"; itemId?: string; type: Exclude<MovementType, "sale"> } | { kind: "add" } | null;
 
 export function InventoryManager({
@@ -51,6 +53,7 @@ export function InventoryManager({
   const [category, setCategory] = useState("all");
   const [statusId, setStatusId] = useState("all");
   const [dialog, setDialog] = useState<DialogState>(null);
+  const [historyShown, setHistoryShown] = useState(HISTORY_PAGE_SIZE);
 
   const search = query.trim().toLowerCase();
   const visible = items.filter(
@@ -75,7 +78,7 @@ export function InventoryManager({
           </TabsList>
           <span className="flex-1" />
           <Button variant="outline" className="h-10" onClick={() => setDialog({ kind: "movement", type: "waste" })}>
-            <Trash2 data-icon="inline-start" /> Record Waste
+            <Trash2 data-icon="inline-start" /> Record waste
           </Button>
           <Button variant="outline" className="h-10" onClick={() => setDialog({ kind: "add" })}>
             <Plus data-icon="inline-start" /> Add item
@@ -105,7 +108,7 @@ export function InventoryManager({
                   <TableHead className="hidden text-right text-xs lg:table-cell">Unit cost</TableHead>
                   <TableHead className="hidden text-right text-xs sm:table-cell">Stock value</TableHead>
                   <TableHead className="hidden text-xs sm:table-cell">Status</TableHead>
-                  <TableHead className="w-28 text-right text-xs">
+                  <TableHead className="w-48 text-right text-xs">
                     <span className="sr-only">Actions</span>
                   </TableHead>
                 </TableRow>
@@ -114,7 +117,19 @@ export function InventoryManager({
                 {visible.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
-                      No items match these filters.
+                      {items.length === 0 ? (
+                        <div className="flex flex-col items-center gap-3">
+                          <p>
+                            <span className="block font-semibold text-foreground">No items yet</span>
+                            Add the ingredients and supplies you buy or make, then record what you have.
+                          </p>
+                          <Button className="h-10 px-4" onClick={() => setDialog({ kind: "add" })}>
+                            <Plus data-icon="inline-start" /> Add item
+                          </Button>
+                        </div>
+                      ) : (
+                        "No items match these filters."
+                      )}
                     </TableCell>
                   </TableRow>
                 )}
@@ -136,6 +151,8 @@ export function InventoryManager({
                       <TableCell>
                         <p className={cn("font-semibold tabular-nums", s === "out" ? "text-destructive" : s === "low" && "text-warning")}>
                           {formatQuantity(item.quantity, item.unit)}
+                          {/* The Status column is hidden on phones, so say it in words, not only colour. */}
+                          {s !== "in" && <span className="ml-1.5 text-xs sm:hidden">{s === "out" ? "Out" : "Low"}</span>}
                         </p>
                         <div className="mt-1.5 h-1.5 w-32 rounded-full bg-neutral-soft" aria-hidden>
                           <div className={cn("h-1.5 rounded-full", status[s].bar)} style={{ width: `${fill * 100}%` }} />
@@ -157,15 +174,14 @@ export function InventoryManager({
                         ) : null}
                       </TableCell>
                       <TableCell className="text-right">
-                        {s === "in" ? (
-                          <Button variant="ghost" size="sm" onClick={() => setDialog({ kind: "movement", itemId: item.id, type: "adjustment" })}>
-                            <Pencil data-icon="inline-start" /> Adjust
-                          </Button>
-                        ) : (
+                        <span className="flex justify-end gap-1">
                           <Button variant="ghost" size="sm" onClick={() => setDialog({ kind: "movement", itemId: item.id, type: "stock-in" })}>
                             <Plus data-icon="inline-start" /> Restock
                           </Button>
-                        )}
+                          <Button variant="ghost" size="sm" onClick={() => setDialog({ kind: "movement", itemId: item.id, type: "adjustment" })}>
+                            <Pencil data-icon="inline-start" /> Adjust
+                          </Button>
+                        </span>
                       </TableCell>
                     </TableRow>
                   );
@@ -194,7 +210,7 @@ export function InventoryManager({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {movements.map((m) => (
+                  {movements.slice(0, historyShown).map((m) => (
                     <TableRow key={m.id}>
                       <TableCell className="text-muted-foreground tabular-nums">{m.date}</TableCell>
                       <TableCell className="font-semibold">{itemName(m.itemId)}</TableCell>
@@ -213,6 +229,14 @@ export function InventoryManager({
                   ))}
                 </TableBody>
               </Table>
+              {movements.length > historyShown && (
+                <div className="flex items-center justify-between gap-3 border-t px-4 py-3 text-xs text-muted-foreground">
+                  Showing {historyShown} of {movements.length}
+                  <Button variant="outline" size="sm" onClick={() => setHistoryShown((n) => n + HISTORY_PAGE_SIZE)}>
+                    Show {Math.min(HISTORY_PAGE_SIZE, movements.length - historyShown)} more
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>

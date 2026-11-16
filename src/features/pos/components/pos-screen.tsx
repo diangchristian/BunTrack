@@ -3,8 +3,11 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
+import { formatCentavos } from "@/lib/format";
 import type { Category } from "@/features/categories/types";
 import type { Settings } from "@/features/settings/schemas";
+import { orderTotals } from "../pricing";
 import type { MenuProduct, Receipt } from "../types";
 import { OrderPanel, type OrderLine } from "./order-panel";
 import { PaymentDialog } from "./payment-dialog";
@@ -32,7 +35,21 @@ export function PosScreen({ menu, categories, cashierName, shop }: { menu: MenuP
     });
   }
 
+  function clearOrder() {
+    const cleared = quantities;
+    setQuantities(new Map());
+    // One mis-tap shouldn't cost a whole order, and an undo is faster than a confirm dialog.
+    toast("Order cleared", {
+      id: "order-cleared",
+      // Merge, so anything tapped in since the clear is kept.
+      action: { label: "Undo", onClick: () => setQuantities((now) => new Map([...cleared, ...now])) },
+    });
+  }
+
+  const { itemCount, total } = orderTotals(lines.map((l) => ({ unitPrice: l.product.price, quantity: l.quantity })));
+
   function handlePaid(paid: Receipt) {
+    toast.dismiss("order-cleared"); // an Undo after a sale would bring back an old order
     toast.success(`Order ${paid.orderNumber} completed`);
     setPaying(false);
     setReceipt(paid);
@@ -47,13 +64,27 @@ export function PosScreen({ menu, categories, cashierName, shop }: { menu: MenuP
           <p className="text-sm text-muted-foreground">Cashier: {cashierName}</p>
         </div>
         <ProductGrid menu={menu} categories={categories} quantities={quantities} onAdd={(id) => setQuantity(id, (quantities.get(id) ?? 0) + 1)} />
+        {/* Below lg the order panel sits under the whole menu, so keep the total and Charge in reach. */}
+        {lines.length > 0 && (
+          <div className="sticky bottom-0 z-20 -mx-4 mt-auto flex items-center gap-3 border-t bg-card px-4 py-3 shadow-[0_-2px_8px_rgb(31_26_23/0.06)] md:-mx-6 md:px-6 lg:hidden">
+            <a href="#current-order" className="min-w-0 flex-1 text-sm">
+              <span className="block font-semibold">
+                {itemCount} {itemCount === 1 ? "item" : "items"}
+              </span>
+              <span className="text-xs text-muted-foreground underline">View order</span>
+            </a>
+            <Button variant="success" className="h-11 px-5 font-semibold" onClick={() => setPaying(true)}>
+              Charge {formatCentavos(total)}
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="flex min-h-0 flex-col border-t lg:border-t-0 lg:border-l">
         <OrderPanel
           lines={lines}
           onQuantityChange={setQuantity}
-          onClear={() => setQuantities(new Map())}
+          onClear={clearOrder}
           onCharge={() => setPaying(true)}
         />
       </div>

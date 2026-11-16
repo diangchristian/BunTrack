@@ -44,7 +44,7 @@ async function resizePhoto(file: File, max = 512) {
   }
 }
 
-/** product = null → "Add Product"; a product → "Edit Product". */
+/** product = null → "Add product"; a product → "Edit product". */
 export function ProductDialog({ product, categories, onClose }: { product: CostedProduct | null; categories: Category[]; onClose: () => void }) {
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
@@ -114,7 +114,7 @@ function ProductForm({ product, categories, onDone }: { product: CostedProduct |
       <input type="hidden" name="image" value={photo} />
 
       <DialogHeader>
-        <DialogTitle className="text-lg font-bold">{product ? "Edit Product" : "Add Product"}</DialogTitle>
+        <DialogTitle className="text-lg font-bold">{product ? "Edit product" : "Add product"}</DialogTitle>
         <DialogDescription>{product ? product.name : "New items show on the POS as soon as you save."}</DialogDescription>
       </DialogHeader>
 
@@ -259,7 +259,7 @@ function ProductForm({ product, categories, onDone }: { product: CostedProduct |
             Cancel
           </Button>
           <Button type="submit" disabled={busy}>
-            <Check data-icon="inline-start" /> {saving ? "Saving…" : "Save Product"}
+            <Check data-icon="inline-start" /> {saving ? "Saving…" : "Save product"}
           </Button>
         </span>
       </DialogFooter>

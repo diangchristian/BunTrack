@@ -61,7 +61,7 @@ export function PricingPanel({
           <p className="text-xs text-muted-foreground">{productName}</p>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="selling-price" className="text-xs font-semibold text-muted-foreground">
+          <Label htmlFor="selling-price" className="text-sm font-semibold text-muted-foreground">
             Selling price (₱)
           </Label>
           <Input id="selling-price" inputMode="decimal" value={priceInput} onChange={(e) => setPriceInput(e.target.value)} className="h-10 tabular-nums" />

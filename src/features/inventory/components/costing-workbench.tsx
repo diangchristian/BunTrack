@@ -50,7 +50,7 @@ export function CostingWorkbench({
         <div className="flex flex-col gap-6">
           <section className="flex flex-wrap items-end gap-4 rounded-xl border bg-card p-5 shadow-[0_2px_8px_rgb(31_26_23/0.06)]">
             <div className="flex min-w-60 flex-1 flex-col gap-1.5">
-              <span className="text-xs font-semibold text-muted-foreground" id="product-label">
+              <span className="text-sm font-semibold text-muted-foreground" id="product-label">
                 Product
               </span>
               <Select items={products.map((p) => ({ value: p.id, label: p.name }))} value={productId} onValueChange={(v) => v && setProductId(v)}>

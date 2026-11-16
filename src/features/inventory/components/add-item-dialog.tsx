@@ -86,7 +86,7 @@ function AddItemForm({ onDone }: { onDone: () => void }) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <span id="measure-label" className="text-xs font-semibold text-muted-foreground">
+        <span id="measure-label" className="text-sm font-semibold text-muted-foreground">
           How do you measure it?
         </span>
         <input type="hidden" name="unit" value={unit} />
@@ -119,7 +119,7 @@ function AddItemForm({ onDone }: { onDone: () => void }) {
 
       {!homemade && (
         <div className="flex flex-col gap-2 rounded-[10px] border p-3">
-          <span className="text-xs font-semibold text-muted-foreground" id="bought-as-label">
+          <span className="text-sm font-semibold text-muted-foreground" id="bought-as-label">
             How do you buy it?
           </span>
           <div className="grid grid-cols-2 gap-1 rounded-[10px] border bg-secondary p-1" role="group" aria-labelledby="bought-as-label">

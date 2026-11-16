@@ -70,7 +70,7 @@ export function ReceiptDialog({ receipt, shop, onNewOrder }: { receipt: Receipt 
 
             <DialogFooter>
               <Button className="h-11 w-full font-semibold" onClick={onNewOrder} autoFocus>
-                <Plus data-icon="inline-start" /> New Order
+                <Plus data-icon="inline-start" /> New order
               </Button>
             </DialogFooter>
           </>

@@ -249,7 +249,7 @@ function MovementForm({
 export function Field({ label, htmlFor, error, children }: { label: string; htmlFor: string; error?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={htmlFor} className="text-xs font-semibold text-muted-foreground">
+      <Label htmlFor={htmlFor} className="text-sm font-semibold text-muted-foreground">
         {label}
       </Label>
       {children}

@@ -24,11 +24,11 @@ export function OrderPanel({
   const { itemCount, total } = orderTotals(lines.map((l) => ({ unitPrice: l.product.price, quantity: l.quantity })));
 
   return (
-    <section aria-label="Current order" className="flex min-h-0 flex-col bg-card">
+    <section id="current-order" aria-label="Current order" className="flex min-h-0 scroll-mt-16 flex-col bg-card">
       <div className="flex flex-col gap-3 px-5 pt-5 pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold">Current Order</h2>
+            <h2 className="text-lg font-bold">Current order</h2>
             <p className="text-xs text-muted-foreground">
               {itemCount} {itemCount === 1 ? "item" : "items"}
             </p>
@@ -61,11 +61,11 @@ export function OrderPanel({
                       type="button"
                       onClick={() => onQuantityChange(product.id, quantity - 1)}
                       aria-label={`Remove one ${product.name}`}
-                      className="flex size-8 items-center justify-center text-muted-foreground hover:text-foreground"
+                      className="flex size-11 items-center justify-center text-muted-foreground hover:text-foreground"
                     >
-                      <Minus className="size-3.5" />
+                      <Minus className="size-4" />
                     </button>
-                    <span className="w-8 text-center text-sm font-semibold tabular-nums" aria-live="polite">
+                    <span className="w-9 text-center text-sm font-semibold tabular-nums" aria-live="polite">
                       {quantity}
                     </span>
                     <button
@@ -73,9 +73,9 @@ export function OrderPanel({
                       onClick={() => onQuantityChange(product.id, quantity + 1)}
                       disabled={quantity >= (product.servingsLeft ?? 99)}
                       aria-label={`Add one ${product.name}`}
-                      className="flex size-8 items-center justify-center text-primary disabled:opacity-40"
+                      className="flex size-11 items-center justify-center text-primary disabled:opacity-40"
                     >
-                      <Plus className="size-3.5" />
+                      <Plus className="size-4" />
                     </button>
                   </div>
                 </div>
@@ -85,9 +85,9 @@ export function OrderPanel({
                     type="button"
                     onClick={() => onQuantityChange(product.id, 0)}
                     aria-label={`Remove ${product.name} from order`}
-                    className="flex size-8 items-center justify-center rounded-md border text-destructive hover:bg-destructive-soft"
+                    className="flex size-11 items-center justify-center rounded-md border text-destructive hover:bg-destructive-soft"
                   >
-                    <Trash2 className="size-3.5" />
+                    <Trash2 className="size-4" />
                   </button>
                 </div>
               </li>

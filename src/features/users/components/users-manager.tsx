@@ -59,7 +59,7 @@ export function UsersManager({ users, currentUserId }: { users: User[]; currentU
           <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search accounts…" aria-label="Search accounts" className="h-10 pl-9" />
         </div>
         <Button className="h-10 px-4" onClick={() => setEditing(null)}>
-          <Plus data-icon="inline-start" /> Add Account
+          <Plus data-icon="inline-start" /> Add account
         </Button>
       </div>
 
@@ -158,7 +158,7 @@ function UserDialog({ user, isSelf, onClose }: { user: User | null; isSelf: bool
         <form onSubmit={keepValuesOnSubmit(formAction)} className="flex flex-col gap-4">
           {user && <input type="hidden" name="id" value={user.id} />}
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold">{user ? "Edit Account" : "Add Account"}</DialogTitle>
+            <DialogTitle className="text-lg font-bold">{user ? "Edit account" : "Add account"}</DialogTitle>
             <DialogDescription>Passwords are set once real sign-in is connected.</DialogDescription>
           </DialogHeader>
           <Field label="Name" htmlFor="user-name" error={errors.name?.[0]}>
@@ -198,7 +198,7 @@ function UserDialog({ user, isSelf, onClose }: { user: User | null; isSelf: bool
               Cancel
             </Button>
             <Button type="submit" className="h-10 font-semibold" disabled={saving}>
-              <Check data-icon="inline-start" /> {saving ? "Saving…" : "Save Account"}
+              <Check data-icon="inline-start" /> {saving ? "Saving…" : "Save account"}
             </Button>
           </DialogFooter>
         </form>

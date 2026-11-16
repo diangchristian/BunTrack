@@ -48,7 +48,7 @@ export function ProductsManager({ products, categories }: { products: CostedProd
         <FilterSelect label="Status" items={statusFilter} value={status} onChange={setStatus} />
         <span className="flex-1" />
         <Button className="h-10 px-4" onClick={() => setEditing(null)}>
-          <Plus data-icon="inline-start" /> Add Product
+          <Plus data-icon="inline-start" /> Add product
         </Button>
       </div>
 
@@ -71,7 +71,19 @@ export function ProductsManager({ products, categories }: { products: CostedProd
             {visible.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
-                  No products match these filters.
+                  {products.length === 0 ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <p>
+                        <span className="block font-semibold text-foreground">No products yet</span>
+                        Add what you sell, then set each recipe in Costing &amp; Pricing.
+                      </p>
+                      <Button className="h-10 px-4" onClick={() => setEditing(null)}>
+                        <Plus data-icon="inline-start" /> Add product
+                      </Button>
+                    </div>
+                  ) : (
+                    "No products match these filters."
+                  )}
                 </TableCell>
               </TableRow>
             )}

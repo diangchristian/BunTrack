@@ -18,7 +18,7 @@ import { expenseBusinesses, expenseCategories, type Expense } from "../types";
 const categoryItems = expenseCategories.map((c) => ({ value: c, label: c }));
 const businessItems = expenseBusinesses.map((b) => ({ value: b.id, label: b.label }));
 
-/** expense = null → "Record Expense"; an expense → "Edit Expense". */
+/** expense = null → "Record expense"; an expense → "Edit expense". */
 export function ExpenseDialog({ expense, onClose }: { expense: Expense | null; onClose: () => void }) {
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
@@ -45,7 +45,7 @@ function ExpenseForm({ expense, onDone }: { expense: Expense | null; onDone: () 
     <form onSubmit={keepValuesOnSubmit(formAction)} className="flex flex-col gap-4">
       {expense && <input type="hidden" name="id" value={expense.id} />}
       <DialogHeader>
-        <DialogTitle className="text-lg font-bold">{expense ? "Edit Expense" : "Record Expense"}</DialogTitle>
+        <DialogTitle className="text-lg font-bold">{expense ? "Edit expense" : "Record expense"}</DialogTitle>
         <DialogDescription>Operating costs only. Ingredients and Dan Eric stock go through Inventory → Stock In.</DialogDescription>
       </DialogHeader>
 
@@ -96,7 +96,7 @@ function ExpenseForm({ expense, onDone }: { expense: Expense | null; onDone: () 
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <span className="text-xs font-semibold text-muted-foreground" id="paid-via-label">
+        <span className="text-sm font-semibold text-muted-foreground" id="paid-via-label">
           Paid via
         </span>
         <input type="hidden" name="paidVia" value={paidVia} />
@@ -133,7 +133,7 @@ function ExpenseForm({ expense, onDone }: { expense: Expense | null; onDone: () 
           Cancel
         </Button>
         <Button type="submit" className="h-10 font-semibold" disabled={saving}>
-          <Check data-icon="inline-start" /> {saving ? "Saving…" : "Save Expense"}
+          <Check data-icon="inline-start" /> {saving ? "Saving…" : "Save expense"}
         </Button>
       </DialogFooter>
     </form>

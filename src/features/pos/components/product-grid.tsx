@@ -58,7 +58,7 @@ export function ProductGrid({
               aria-pressed={active}
               onClick={() => setCategory(chip.id)}
               className={cn(
-                "flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold transition-colors",
+                "flex h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold transition-colors",
                 active ? "border-primary bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted",
               )}
             >
@@ -66,7 +66,7 @@ export function ProductGrid({
               <span
                 className={cn(
                   "rounded-full px-1.5 text-xs",
-                  active ? "bg-brand-strong text-primary-foreground" : "bg-neutral-soft",
+                  active ? "bg-primary-foreground/20 text-primary-foreground" : "bg-neutral-soft",
                 )}
               >
                 {chip.count}
@@ -110,7 +110,7 @@ export function ProductGrid({
                   <span className={cn("text-sm font-semibold", !product.available && "opacity-60")}>
                     {product.name}
                     {product.pieces === 2 && (
-                      <span className="ml-1.5 rounded-full bg-brand-soft px-1.5 py-0.5 align-middle text-[10px] font-bold text-brand-strong">B1T1</span>
+                      <span className="ml-1.5 rounded-full bg-brand-soft px-1.5 py-0.5 align-middle text-xs font-bold text-brand-strong">B1T1</span>
                     )}
                     {product.available && product.servingsLeft !== null && (
                       <span className="block text-xs font-normal text-muted-foreground">{product.servingsLeft} left</span>

@@ -12,21 +12,22 @@
   --card-foreground: #1f1a17;
   --popover: #ffffff;
   --popover-foreground: #1f1a17;
-  --primary: #f97316;
+  /* Fills use #dc6400 (white text 3.6:1, OK for bold/large text); orange text on light backgrounds uses the darker --brand-strong (4.7:1) */
+  --primary: #dc6400;
   --primary-foreground: #ffffff;
   --secondary: #faf8f5;
   --secondary-foreground: #1f1a17;
   --muted: #faf8f5;
   --muted-foreground: #6b625b;
   --accent: #fff1e6;
-  --accent-foreground: #ea580c;
+  --accent-foreground: #c2410c;
   --destructive: #dc2626;
   --border: #ece7e1;
   --input: #d9d2ca;
-  --ring: #f97316;
+  --ring: #dc6400;
   --radius: 0.875rem;
 
-  --brand-strong: #ea580c;
+  --brand-strong: #c2410c;
   --brand-soft: #fff1e6;
   --success: #16a34a;
   --success-strong: #15803d;
@@ -45,12 +46,12 @@
 
   --sidebar: #ffffff;
   --sidebar-foreground: #6b625b;
-  --sidebar-primary: #f97316;
+  --sidebar-primary: #dc6400;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #fff1e6;
-  --sidebar-accent-foreground: #ea580c;
+  --sidebar-accent-foreground: #c2410c;
   --sidebar-border: #ece7e1;
-  --sidebar-ring: #f97316;
+  --sidebar-ring: #dc6400;
 }
 
 @theme inline {
