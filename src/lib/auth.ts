@@ -8,16 +8,19 @@ import { nextCookies } from "better-auth/next-js";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 
-export const DEACTIVATED = "This account is deactivated. Ask the shop owner.";
+/** Error code for a deactivated account, so the login form can say so instead of "wrong password". */
+export const ACCOUNT_DEACTIVATED = "ACCOUNT_DEACTIVATED";
 
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
+  // Other addresses the app is opened from, e.g. a POS tablet using the laptop's LAN address.
+  trustedOrigins: env.BETTER_AUTH_TRUSTED_ORIGINS?.split(",").map((o) => o.trim()),
   database: prismaAdapter(db, { provider: "postgresql" }),
   emailAndPassword: {
     enabled: true,
-    // A family shop: nobody signs themselves up. The owner's account comes from the
-    // seed, and other accounts are created on the server (the Users page, next).
+    // A family shop: nobody signs themselves up. The owner comes from the seed and the
+    // owner adds everyone else on the Users page.
     disableSignUp: true,
   },
   user: {
@@ -27,13 +30,23 @@ export const auth = betterAuth({
       active: { type: "boolean", defaultValue: true, input: false },
     },
   },
+  // Covers the /api/auth HTTP routes only; the login form has its own limit (features/auth/actions.ts).
+  // In the database so counts survive restarts and are shared between server instances.
+  rateLimit: {
+    enabled: true,
+    storage: "database",
+    // Read-only and asked on every /login visit by src/proxy.ts: counting it would write a row per page view.
+    customRules: { "/get-session": false },
+  },
   databaseHooks: {
     session: {
       create: {
         // The one place every sign-in passes (the form and the raw /api/auth route alike).
         before: async (session) => {
           const user = await db.user.findUnique({ where: { id: session.userId }, select: { active: true } });
-          if (!user?.active) throw new APIError("FORBIDDEN", { message: DEACTIVATED });
+          if (!user?.active) {
+            throw new APIError("FORBIDDEN", { message: "This account is deactivated. Ask the shop owner.", code: ACCOUNT_DEACTIVATED });
+          }
         },
       },
     },

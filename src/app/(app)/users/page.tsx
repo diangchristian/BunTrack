@@ -5,7 +5,7 @@ import { Check, Minus, ShieldCheck, Users } from "lucide-react";
 import { NoAccess } from "@/components/no-access";
 import { canAdminister, getCurrentUser } from "@/features/auth/queries";
 import { UsersManager } from "@/features/users/components/users-manager";
-import { userStore } from "@/features/users/store";
+import { listUsers } from "@/features/users/queries";
 import { permissions, roles } from "@/features/users/types";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +18,7 @@ export default async function UsersPage() {
   if (!(await canAdminister())) return <NoAccess page="Users & Roles" />;
 
   await connection();
-  const [users, me] = [userStore.list(), await getCurrentUser()];
+  const [users, me] = await Promise.all([listUsers(), getCurrentUser()]);
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-8">
@@ -88,8 +88,7 @@ export default async function UsersPage() {
             </tbody>
           </table>
           <p className="text-xs text-muted-foreground">
-            Family members can change prices, stock, recipes and expenses; every change is recorded in Activity Logs. Until real sign-in is
-            connected, everyone uses the app as the first active administrator.
+            Family members can change prices, stock, recipes and expenses; every change is recorded in Activity Logs.
           </p>
         </section>
       </div>

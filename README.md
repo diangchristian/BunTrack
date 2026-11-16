@@ -21,7 +21,9 @@ npm run dev                 # http://localhost:3000, sign in as SEED_ADMIN_EMAIL
 ```
 
 Sign-in is Better Auth with email and password (`src/lib/auth.ts`). Public sign-up is
-off: accounts are created on the server, starting with the seeded administrator.
+off: the seeded administrator adds everyone else on **Users & Roles** and sets their
+first password. Anyone can change their own password from the key icon in the sidebar.
+The login form allows 5 tries per email, then locks that email for 15 minutes.
 
 ## Scripts
 
@@ -40,7 +42,7 @@ off: accounts are created on the server, starting with the seeded administrator.
 ## Project structure
 
 ```
-prisma/              schema.prisma (auth tables), migrations/, seed.ts (first admin)
+prisma/              schema.prisma (auth + login-limit tables), migrations/, seed.ts (first admin)
 prisma7.config.ts    Prisma 7 config: schema path, migrations, DATABASE_URL_UNPOOLED
 neon.ts              Neon project policy (services, branch TTLs); `neon deploy` applies it
 src/app/             Routing and composition only
@@ -51,7 +53,8 @@ src/components/ui/   shadcn components (add more with `npx shadcn@latest add <na
 src/components/layout/  App sidebar, top bar, logo
 src/hooks/           Shared client-side hooks
 src/lib/             auth.ts (Better Auth), db.ts (Prisma client on the Neon driver), env.ts (validated env), utils.ts (cn), format.ts (₱)
-src/proxy.ts         Pass-through request proxy (Next.js 16 replacement for middleware)
+src/proxy.ts         Auth redirects (Next.js 16 replacement for middleware): no session cookie → /login;
+                     signed in → /login sends you to /dashboard. Pages still check the real session.
 src/generated/prisma Generated Prisma client (gitignored)
 ```
 

@@ -12,7 +12,9 @@ import { PrismaClient } from "../src/generated/prisma/client";
 const db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: process.env.DATABASE_URL }) });
 
 async function main() {
-  const { SEED_ADMIN_NAME: name = "Shop Owner", SEED_ADMIN_EMAIL: email, SEED_ADMIN_PASSWORD: password } = process.env;
+  const { SEED_ADMIN_NAME: name = "Shop Owner", SEED_ADMIN_PASSWORD: password } = process.env;
+  // Better Auth looks emails up in lowercase, so a capital letter here would make the account unreachable.
+  const email = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
   if (!email || !password || password.length < 8) {
     throw new Error("Set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD (8+ characters) in .env");
   }

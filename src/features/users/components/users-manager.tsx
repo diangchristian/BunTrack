@@ -159,7 +159,9 @@ function UserDialog({ user, isSelf, onClose }: { user: User | null; isSelf: bool
           {user && <input type="hidden" name="id" value={user.id} />}
           <DialogHeader>
             <DialogTitle className="text-lg font-bold">{user ? "Edit account" : "Add account"}</DialogTitle>
-            <DialogDescription>Passwords are set once real sign-in is connected.</DialogDescription>
+            <DialogDescription>
+              {user ? "Leave the password blank to keep it. A new one signs them out on other devices." : "They sign in with this email and password."}
+            </DialogDescription>
           </DialogHeader>
           <Field label="Name" htmlFor="user-name" error={errors.name?.[0]}>
             <Input id="user-name" name="name" defaultValue={user?.name} maxLength={60} required className="h-10" />
@@ -187,6 +189,19 @@ function UserDialog({ user, isSelf, onClose }: { user: User | null; isSelf: bool
                 </SelectContent>
               </Select>
             )}
+          </Field>
+          <Field label={user ? "New password" : "Password"} htmlFor="user-password" error={errors.password?.[0]}>
+            <Input
+              id="user-password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              maxLength={128}
+              required={!user}
+              placeholder={user ? "Leave blank to keep" : "At least 8 characters"}
+              className="h-10"
+            />
           </Field>
           {state.error && (
             <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive">

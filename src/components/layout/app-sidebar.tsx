@@ -18,6 +18,7 @@ import {
 
 import { Logo } from "@/components/layout/logo";
 import { logout } from "@/features/auth/actions";
+import { ChangePasswordButton } from "@/features/auth/components/change-password-dialog";
 import {
   Sidebar,
   SidebarContent,
@@ -122,6 +123,7 @@ export function AppSidebar({ user }: { user: { name: string; role: string } }) {
             <p className="truncate text-sm font-semibold text-foreground">{user.name}</p>
             <p className="truncate text-xs text-muted-foreground">{user.role}</p>
           </div>
+          <ChangePasswordButton />
           {/* A form, not a link: signing out changes state, so it must be a POST. */}
           <form action={logout}>
             <button
