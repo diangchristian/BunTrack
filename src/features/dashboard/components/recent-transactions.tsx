@@ -8,17 +8,16 @@ import { formatPeso } from "@/lib/format";
 import type { DashboardData } from "../queries";
 import { Panel } from "./panel";
 
+// Only completed orders exist until voids are built; add their badges then.
 const statusBadge = {
   completed: { variant: "success", label: "Completed" },
-  voided: { variant: "danger", label: "Voided" },
-  cancelled: { variant: "neutral", label: "Cancelled" },
 } as const;
 
 export function RecentTransactions({ rows }: { rows: DashboardData["recentTransactions"] }) {
   return (
     <Panel
       title="Recent Transactions"
-      description="Live from the POS · today"
+      description="The latest orders from the POS"
       action={
         <Link href="/reports" className={buttonVariants({ variant: "ghost", size: "sm" })}>
           View all <ChevronRight data-icon="inline-end" />
@@ -38,6 +37,13 @@ export function RecentTransactions({ rows }: { rows: DashboardData["recentTransa
             </TableRow>
           </TableHeader>
           <TableBody>
+            {rows.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  No orders yet. Sales from the POS show up here.
+                </TableCell>
+              </TableRow>
+            )}
             {rows.map((tx) => {
               const status = statusBadge[tx.status];
               return (

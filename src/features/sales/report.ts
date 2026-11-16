@@ -4,7 +4,8 @@ import { businessOf, type BusinessFilter, type Order, type PeriodId } from "./ty
 const DAY = 86_400_000;
 const toDate = (d: string) => new Date(`${d}T00:00:00Z`).getTime();
 const toDay = (t: number) => new Date(t).toISOString().slice(0, 10);
-const addDays = (d: string, n: number) => toDay(toDate(d) + n * DAY);
+/** "2026-11-17" moved by n days (negative = earlier); calendar maths on the date alone. */
+export const addDays = (d: string, n: number) => toDay(toDate(d) + n * DAY);
 
 export type Range = { from: string; to: string; prevFrom: string; prevTo: string };
 
@@ -25,8 +26,11 @@ function select(orders: Order[], from: string, to: string, business: BusinessFil
     .filter((o) => o.lines.length > 0);
 }
 
-const revenueOf = (lines: Order["lines"]) => lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
-const costOf = (lines: Order["lines"]) => lines.reduce((sum, l) => sum + l.quantity * l.unitCost, 0);
+type Priced = Pick<Order["lines"][number], "quantity" | "unitPrice">;
+type Costed = Pick<Order["lines"][number], "quantity" | "unitCost">;
+/** Centavos charged / recipe cost for these lines (Reports and the Dashboard share them). */
+export const revenueOf = (lines: Priced[]) => lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
+export const costOf = (lines: Costed[]) => lines.reduce((sum, l) => sum + l.quantity * l.unitCost, 0);
 const itemsOf = (lines: Order["lines"]) => lines.reduce((sum, l) => sum + l.quantity, 0);
 
 /**

@@ -14,6 +14,7 @@ import {
   QuickActions,
   UnavailableProducts,
 } from "@/features/dashboard/components/side-panels";
+import { EmptyNote } from "@/components/empty-note";
 import { StatCard } from "@/components/stat-card";
 import { vsPrevious } from "@/features/dashboard/delta";
 import { getDashboardData } from "@/features/dashboard/queries";
@@ -28,8 +29,6 @@ export default async function DashboardPage() {
 
   const [user, data] = await Promise.all([getCurrentUser(), getDashboardData()]);
   const { today, yesterday } = data;
-  const grossProfit = today.sales - today.cogs;
-  const netProfit = grossProfit - today.expenses;
   const outOfStock = data.lowStock.filter((item) => item.outOfStock).length;
 
   return (
@@ -62,23 +61,23 @@ export default async function DashboardPage() {
         />
         <StatCard
           label="Est. Gross Profit"
-          value={formatPeso(grossProfit)}
+          value={formatPeso(today.grossProfit)}
           icon={TrendingUp}
           tone="success"
-          delta={{ text: `${Math.round((grossProfit / today.sales) * 100)}% margin`, kind: "neutral" }}
+          delta={{ text: today.marginPercent === null ? "No sales yet" : `${today.marginPercent}% margin`, kind: "neutral" }}
         />
         <StatCard
           label="Expenses Today"
           value={formatPeso(today.expenses)}
           icon={Wallet}
-          delta={{ text: "Rent & utilities", kind: "neutral" }}
+          delta={{ text: "Electricity, LPG, supplies…", kind: "neutral" }}
         />
         <StatCard
           label="Net Profit Est."
-          value={formatPeso(netProfit)}
+          value={formatPeso(today.netProfit)}
           icon={Coins}
           tone="success"
-          delta={vsPrevious(netProfit, yesterday.netProfit, "yesterday")}
+          delta={vsPrevious(today.netProfit, yesterday.netProfit, "yesterday")}
         />
         <StatCard
           label="Low Stock Items"
@@ -94,10 +93,14 @@ export default async function DashboardPage() {
           <SalesTrendChart data={data.salesTrend} />
         </Panel>
         <Panel title="Sales by Category" description="Share of revenue · this week">
-          <CategoryDonut data={data.salesByCategory} />
+          {data.salesByCategory.length ? (
+            <CategoryDonut data={data.salesByCategory} />
+          ) : (
+            <EmptyNote>No sales this week yet.</EmptyNote>
+          )}
         </Panel>
 
-        <Panel title="Revenue vs Expenses" description="Monthly · Jun–Nov 2026 (Nov month-to-date)">
+        <Panel title="Revenue vs Expenses" description={`Monthly · ${data.revenueVsExpensesLabel}`}>
           <RevenueExpensesChart data={data.revenueVsExpenses} />
         </Panel>
         <ProductPerformance items={data.bestSellers} />

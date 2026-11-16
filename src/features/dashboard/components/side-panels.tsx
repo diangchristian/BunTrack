@@ -3,14 +3,16 @@ import { AlertTriangle, Boxes, Plus, Receipt, ShoppingCart } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { EmptyNote } from "@/components/empty-note";
 import { cn } from "@/lib/utils";
 import type { DashboardData } from "../queries";
 import { Panel } from "./panel";
 
 export function ProductPerformance({ items }: { items: DashboardData["bestSellers"] }) {
-  const top = Math.max(...items.map((i) => i.unitsSold));
+  const top = Math.max(1, ...items.map((i) => i.unitsSold));
   return (
     <Panel title="Product Performance" description="Best sellers · units sold this week">
+      {items.length === 0 && <EmptyNote>No sales this week yet. Best sellers appear after the first orders.</EmptyNote>}
       <ol className="flex flex-col gap-4">
         {items.map((item, i) => (
           <li key={item.name} className="flex flex-col gap-1.5">
@@ -39,6 +41,7 @@ export function LowStockAlerts({ items }: { items: DashboardData["lowStock"] }) 
       description="At or below minimum threshold"
       action={<Badge variant="danger">{items.length}</Badge>}
     >
+      {items.length === 0 && <EmptyNote>Everything is above its reorder point.</EmptyNote>}
       <ul className="flex flex-col gap-3">
         {items.map((item) => (
           <li key={item.name} className="flex items-center gap-3">
@@ -64,6 +67,7 @@ export function LowStockAlerts({ items }: { items: DashboardData["lowStock"] }) 
 export function UnavailableProducts({ items }: { items: DashboardData["unavailableProducts"] }) {
   return (
     <Panel title="Unavailable on POS" description="Auto-disabled due to missing ingredients">
+      {items.length === 0 && <EmptyNote>Every product that&apos;s switched on can be made right now.</EmptyNote>}
       {items.map((item) => (
         <div key={item.name} className="flex items-center gap-3 rounded-[10px] bg-destructive-soft p-3">
           <div className="flex-1">
