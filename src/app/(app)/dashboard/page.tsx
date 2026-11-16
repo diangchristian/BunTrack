@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AlertTriangle, Coins, Receipt, ShoppingCart, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { AlertTriangle, Coins, Receipt, ShoppingCart, TrendingUp, Wallet } from "lucide-react";
 
 import { NoAccess } from "@/components/no-access";
 import { buttonVariants } from "@/components/ui/button";
@@ -15,20 +15,13 @@ import {
   UnavailableProducts,
 } from "@/features/dashboard/components/side-panels";
 import { StatCard } from "@/components/stat-card";
+import { vsPrevious } from "@/features/dashboard/delta";
 import { getDashboardData } from "@/features/dashboard/queries";
 import { settingsStore } from "@/features/settings/store";
 import { formatPeso } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Dashboard" };
-
-const signed = (n: number, digits = 0) => `${n >= 0 ? "+" : ""}${n.toFixed(digits)}`;
-
-function vsYesterday(now: number, before: number, as: "percent" | "count") {
-  const up = now >= before;
-  const change = as === "percent" ? `${signed(((now - before) / before) * 100, 1)}%` : signed(now - before);
-  return { text: `${change} vs yesterday`, kind: up ? "up" : "down", icon: up ? TrendingUp : TrendingDown } as const;
-}
 
 export default async function DashboardPage() {
   if (!(await canUseStore())) return <NoAccess page="The dashboard" />;
@@ -49,7 +42,7 @@ export default async function DashboardPage() {
           </p>
         </div>
         <Link href="/pos" className={cn(buttonVariants(), "h-10 px-4")}>
-          <ShoppingCart data-icon="inline-start" /> New Order
+          <ShoppingCart data-icon="inline-start" /> New order
         </Link>
       </div>
 
@@ -58,14 +51,14 @@ export default async function DashboardPage() {
           label="Total Sales Today"
           value={formatPeso(today.sales)}
           icon={Coins}
-          delta={vsYesterday(today.sales, yesterday.sales, "percent")}
+          delta={vsPrevious(today.sales, yesterday.sales, "yesterday")}
         />
         <StatCard
           label="Orders Today"
           value={String(today.orders)}
           icon={Receipt}
           tone="success"
-          delta={vsYesterday(today.orders, yesterday.orders, "count")}
+          delta={vsPrevious(today.orders, yesterday.orders, "yesterday", "count")}
         />
         <StatCard
           label="Est. Gross Profit"
@@ -85,7 +78,7 @@ export default async function DashboardPage() {
           value={formatPeso(netProfit)}
           icon={Coins}
           tone="success"
-          delta={vsYesterday(netProfit, yesterday.netProfit, "percent")}
+          delta={vsPrevious(netProfit, yesterday.netProfit, "yesterday")}
         />
         <StatCard
           label="Low Stock Items"

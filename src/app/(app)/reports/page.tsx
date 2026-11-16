@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Coins, Info, Package, Receipt, ShoppingCart, TrendingDown, TrendingUp } from "lucide-react";
+import { Coins, Info, Package, Receipt, ShoppingCart, TrendingUp } from "lucide-react";
 
 import { NoAccess } from "@/components/no-access";
 import { canUseStore } from "@/features/auth/queries";
@@ -10,6 +10,7 @@ import { categoryLabel } from "@/features/categories/types";
 import { ProductPerformance } from "@/features/sales/components/product-performance";
 import { RevenueChart } from "@/features/sales/components/revenue-chart";
 import { TransactionHistory } from "@/features/sales/components/transaction-history";
+import { vsPrevious } from "@/features/dashboard/delta";
 import { getSalesReport, parseReportParams } from "@/features/sales/queries";
 import { businesses, periods } from "@/features/sales/types";
 import { formatCentavos, formatPeso, formatShortDate } from "@/lib/format";
@@ -18,16 +19,6 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = { title: "Sales & Reports" };
 
 const shortDate = formatShortDate;
-
-function vsPrevious(now: number, before: number, label: string) {
-  if (!before) return { text: `No sales ${label}`, kind: "neutral" as const };
-  const pct = ((now - before) / before) * 100;
-  return {
-    text: `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}% vs ${label}`,
-    kind: pct >= 0 ? ("up" as const) : ("down" as const),
-    icon: pct >= 0 ? TrendingUp : TrendingDown,
-  };
-}
 
 export default async function ReportsPage({ searchParams }: PageProps<"/reports">) {
   if (!(await canUseStore())) return <NoAccess page="Sales & Reports" />;
