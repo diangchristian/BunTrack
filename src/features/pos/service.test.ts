@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { checkoutOrder, piecesToDeduct, toMenuProduct } from "./service";
+import { checkoutOrder, piecesToDeduct, toMenuProduct, toReceipt } from "./service";
 import type { MenuProduct } from "./types";
 
 const menu: MenuProduct[] = [
@@ -85,4 +85,29 @@ test("a Buy 1 Take 1 order uses two pieces of stock per order", () => {
     { productId: "b1t1-burger", quantity: 6 },
     { productId: "tea", quantity: 2 },
   ]);
+});
+
+test("a saved order reads back as its receipt: totals and change from the line snapshots", () => {
+  const receipt = toReceipt({
+    number: 1043,
+    completedAt: new Date("2026-11-17T04:41:00.000Z"),
+    method: "cash",
+    amountReceived: 50000,
+    lines: [
+      { productId: "burger", name: "Classic Cheeseburger", quantity: 2, unitPrice: 14900 },
+      { productId: "tea", name: "Iced Tea", quantity: 1, unitPrice: 4900 },
+    ],
+  });
+  assert.deepEqual(receipt, {
+    orderNumber: "#1043",
+    completedAt: "2026-11-17T04:41:00.000Z",
+    method: "cash",
+    lines: [
+      { productId: "burger", name: "Classic Cheeseburger", quantity: 2, lineTotal: 29800 },
+      { productId: "tea", name: "Iced Tea", quantity: 1, lineTotal: 4900 },
+    ],
+    total: 34700,
+    received: 50000,
+    change: 15300,
+  });
 });

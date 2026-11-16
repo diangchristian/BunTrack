@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { canUseStore } from "@/features/auth/queries";
 import type { ItemCategory } from "@/features/inventory/types";
 import { addDays } from "@/features/sales/report";
+import { fromDbDate as asDay, toDbDate as asDate } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { manilaDate } from "@/lib/format";
 import {
@@ -17,9 +18,6 @@ import {
   unavailableRows,
 } from "./summary";
 
-/** A Manila calendar day as Prisma passes it to a DATE column, and back. */
-const asDate = (day: string) => new Date(`${day}T00:00:00.000Z`);
-const asDay = (date: Date) => date.toISOString().slice(0, 10);
 
 /**
  * Everything the dashboard shows, read from Postgres. This file only fetches: each part is one

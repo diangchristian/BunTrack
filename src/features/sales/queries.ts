@@ -2,11 +2,11 @@ import "server-only";
 
 import { connection } from "next/server";
 
-import { productStore } from "@/features/products/store";
+import { fromDbDate, orderLabel, toDbDate as asDate } from "@/lib/dates";
+import { db } from "@/lib/db";
 import { manilaDate } from "@/lib/format";
-import { buildReport, periodRange } from "./report";
-import { orderStore } from "./store";
-import { businesses, periods, type BusinessFilter, type PeriodId } from "./types";
+import { buildReport, periodRange, type Range } from "./report";
+import { businesses, periods, type BusinessFilter, type Order, type PeriodId } from "./types";
 
 /** Untrusted URL values → a known period / business, falling back to the defaults. */
 export function parseReportParams(params: { period?: string | string[]; business?: string | string[] }) {
@@ -15,13 +15,42 @@ export function parseReportParams(params: { period?: string | string[]; business
   return { period, business } as { period: PeriodId; business: BusinessFilter };
 }
 
+
+/**
+ * Completed orders whose Manila day is in the range and the same-length range before it (for the
+ * "vs previous" comparisons), shaped as the report functions expect. Lines keep their snapshots.
+ */
+export async function listOrders(range: Range): Promise<Order[]> {
+  const rows = await db.order.findMany({
+    where: { date: { gte: asDate(range.prevFrom), lte: asDate(range.to) } },
+    select: {
+      number: true,
+      completedAt: true,
+      date: true,
+      method: true,
+      cashier: { select: { name: true } },
+      lines: { select: { productId: true, name: true, categoryId: true, quantity: true, unitPrice: true, unitCost: true } },
+    },
+  });
+  return rows.map((o) => ({
+    number: orderLabel(o.number),
+    completedAt: o.completedAt.toISOString(),
+    date: fromDbDate(o.date),
+    cashier: o.cashier.name,
+    method: o.method,
+    lines: o.lines.map(({ categoryId, ...l }) => ({ ...l, category: categoryId })),
+  }));
+}
+
+/** Every active menu item, so products that didn't sell still show (for "least-selling"). */
+export async function listCatalog() {
+  const rows = await db.product.findMany({ where: { archivedAt: null }, select: { id: true, name: true, categoryId: true } });
+  return rows.map(({ categoryId, ...p }) => ({ ...p, category: categoryId }));
+}
+
 export async function getSalesReport(period: PeriodId, business: BusinessFilter) {
   await connection();
   const range = periodRange(period, manilaDate());
-  const orders = orderStore.list();
-  return {
-    range,
-    report: buildReport(orders, range, business, productStore.list()),
-    includesSample: orders.some((o) => o.sample && o.date >= range.prevFrom && o.date <= range.to),
-  };
+  const [orders, catalog] = await Promise.all([listOrders(range), listCatalog()]);
+  return { range, report: buildReport(orders, range, business, catalog) };
 }

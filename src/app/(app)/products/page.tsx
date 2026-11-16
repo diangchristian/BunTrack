@@ -8,14 +8,14 @@ import { ProductsManager } from "@/features/products/components/products-manager
 import { productMargin } from "@/features/products/costing";
 import { getProducts } from "@/features/products/queries";
 import { isOnSale } from "@/features/products/types";
-import { categoryStore } from "@/features/categories/store";
+import { listCategories } from "@/features/categories/queries";
 
 export const metadata: Metadata = { title: "Products" };
 
 export default async function ProductsPage() {
   if (!(await canUseStore())) return <NoAccess page="Products" />;
 
-  const products = await getProducts();
+  const [products, categories] = await Promise.all([getProducts(), listCategories()]);
   const unavailable = products.filter((p) => !isOnSale(p));
   const costed = products.filter((p) => p.hasRecipe); // no recipe = no cost yet, so leave it out
   const avgMargin = costed.length
@@ -34,7 +34,7 @@ export default async function ProductsPage() {
           label="Menu Items"
           value={String(products.length)}
           icon={Package}
-          delta={{ text: `${categoryStore.list().length} categories`, kind: "neutral" }}
+          delta={{ text: `${categories.length} categories`, kind: "neutral" }}
         />
         <StatCard
           label="Available on POS"
@@ -64,7 +64,7 @@ export default async function ProductsPage() {
         />
       </section>
 
-      <ProductsManager products={products} categories={categoryStore.list()} />
+      <ProductsManager products={products} categories={categories} />
     </div>
   );
 }

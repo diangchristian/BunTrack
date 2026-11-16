@@ -2,9 +2,8 @@ import "server-only";
 
 import { connection } from "next/server";
 
-import { productStore } from "@/features/products/store";
+import { listCatalog, listOrders } from "@/features/sales/queries";
 import { buildReport, periodRange } from "@/features/sales/report";
-import { orderStore } from "@/features/sales/store";
 import type { BusinessFilter, PeriodId } from "@/features/sales/types";
 import { manilaDate } from "@/lib/format";
 import { expenseStore } from "./store";
@@ -16,7 +15,8 @@ export async function getExpensesPage(period: PeriodId, business: BusinessFilter
   const today = manilaDate();
   const range = periodRange(period, today);
   const summary = summarizeExpenses(expenseStore.list(), range, business, today);
-  const { kpis } = buildReport(orderStore.list(), range, business, productStore.list());
+  const [orders, catalog] = await Promise.all([listOrders(range), listCatalog()]);
+  const { kpis } = buildReport(orders, range, business, catalog);
   return {
     range,
     summary,

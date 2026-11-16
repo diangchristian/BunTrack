@@ -7,12 +7,32 @@ import { randomUUID } from "node:crypto";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { hashPassword } from "better-auth/crypto";
 
+import { ICE_CREAM } from "../src/features/categories/types";
 import { usernameSchema } from "../src/features/users/schemas";
 import { PrismaClient } from "../src/generated/prisma/client";
 
 const db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: process.env.DATABASE_URL }) });
 
+// The menu categories a new shop starts with (Settings → Product categories can change them).
+// Ice Cream is locked in code: it marks the Dan Eric items.
+const defaultCategories = [
+  { id: "burgers", label: "Burgers" },
+  { id: "combos", label: "Combo Meals" },
+  { id: "sides", label: "Sides" },
+  { id: "drinks", label: "Drinks" },
+  { id: ICE_CREAM, label: "Ice Cream" },
+];
+
+async function seedCategories() {
+  // Only when there are none yet, so re-running the seed never undoes the owner's changes.
+  if ((await db.category.count()) > 0) return console.log("Categories already set up, nothing to do.");
+  await db.category.createMany({ data: defaultCategories.map((c, position) => ({ ...c, position })) });
+  console.log(`Added ${defaultCategories.length} menu categories.`);
+}
+
 async function main() {
+  await seedCategories();
+
   const { SEED_ADMIN_NAME: name = "Shop Owner", SEED_ADMIN_PASSWORD: password } = process.env;
   // Better Auth looks emails up in lowercase, so a capital letter here would make the account unreachable.
   const email = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();

@@ -12,7 +12,16 @@ features/<feature-name>/
   schemas.ts    # Zod schemas
   types.ts      # Feature-specific TypeScript types
   service.ts    # Optional. Complex business logic shared by actions and queries
+  rules.ts      # Optional. Pure checks/calculations (no database), unit-tested
+  summary.ts    #   (same idea: dashboard/summary.ts, sales/report.ts, inventory/movements.ts)
+  checkout.ts   # Optional. A "server-only" database write too big for actions.ts
+                # (pos/checkout.ts: the sale transaction)
 ```
+
+Pages and actions check access first (`canUseStore()` / `canAdminister()`).
+Shared read helpers named `list…` (`listCategories`, `listOrders`, `listInventoryItems`)
+are building blocks for those already-guarded callers, so they don't check again.
+A query a page calls as its whole data source (like `getDashboardData`) checks itself.
 
 ## Rules
 

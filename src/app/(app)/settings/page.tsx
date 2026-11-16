@@ -4,8 +4,7 @@ import { connection } from "next/server";
 import { NoAccess } from "@/components/no-access";
 import { canAdminister } from "@/features/auth/queries";
 import { CategoryManager } from "@/features/categories/components/category-manager";
-import { categoryStore } from "@/features/categories/store";
-import { productStore } from "@/features/products/store";
+import { listCategories, productCountsByCategory } from "@/features/categories/queries";
 import { SettingsForm } from "@/features/settings/components/settings-form";
 import { settingsStore } from "@/features/settings/store";
 
@@ -15,8 +14,9 @@ export default async function SettingsPage() {
   if (!(await canAdminister())) return <NoAccess page="Settings" />;
 
   await connection();
-  const productCounts: Record<string, number> = {};
-  for (const p of productStore.list()) productCounts[p.category] = (productCounts[p.category] ?? 0) + 1;
+  const [categories, counts] = await Promise.all([listCategories(), productCountsByCategory()]);
+  // The list shows products on the menu; archived ones are explained if a delete is refused.
+  const productCounts = Object.fromEntries(Object.entries(counts).map(([id, c]) => [id, c.active]));
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-8">
@@ -26,7 +26,7 @@ export default async function SettingsPage() {
       </div>
       <SettingsForm settings={settingsStore.get()} />
       <div className="xl:w-[calc(100%-364px)]">
-        <CategoryManager categories={categoryStore.list()} productCounts={productCounts} />
+        <CategoryManager categories={categories} productCounts={productCounts} />
       </div>
     </div>
   );

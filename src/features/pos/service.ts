@@ -1,7 +1,8 @@
 import { changeDue, orderTotals } from "./pricing";
 import type { CheckoutInput } from "./schemas";
 import { unavailableReason, type CostedProduct } from "@/features/products/types";
-import type { MenuProduct } from "./types";
+import { orderLabel } from "@/lib/dates";
+import type { MenuProduct, PaymentMethod, Receipt } from "./types";
 
 type CheckoutResult =
   | {
@@ -26,7 +27,7 @@ export function toMenuProduct(product: CostedProduct): MenuProduct {
  * Prices an order from the server's menu. The browser only sends product ids and
  * quantities, so a tampered request can't change prices or sell sold-out items.
  */
-export function checkoutOrder(menu: MenuProduct[], input: CheckoutInput): CheckoutResult {
+export function checkoutOrder(menu: MenuProduct[], input: Omit<CheckoutInput, "clientRequestId">): CheckoutResult {
   const quantities = new Map<string, number>();
   for (const line of input.lines) {
     quantities.set(line.productId, (quantities.get(line.productId) ?? 0) + line.quantity);
@@ -64,4 +65,25 @@ export function piecesToDeduct(lines: { productId: string; quantity: number }[],
     productId,
     quantity: quantity * (products.find((p) => p.id === productId)?.pieces ?? 1),
   }));
+}
+
+/** A saved order read back as the receipt the cashier sees: totals and change from its line snapshots. */
+export function toReceipt(order: {
+  number: number;
+  completedAt: Date;
+  method: PaymentMethod;
+  amountReceived: number;
+  lines: { productId: string; name: string; quantity: number; unitPrice: number }[];
+}): Receipt {
+  const lines = order.lines.map((l) => ({ productId: l.productId, name: l.name, quantity: l.quantity, lineTotal: l.quantity * l.unitPrice }));
+  const total = lines.reduce((sum, l) => sum + l.lineTotal, 0);
+  return {
+    orderNumber: orderLabel(order.number),
+    completedAt: order.completedAt.toISOString(),
+    method: order.method,
+    lines,
+    total,
+    received: order.amountReceived,
+    change: changeDue(total, order.amountReceived),
+  };
 }

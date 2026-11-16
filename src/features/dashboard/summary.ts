@@ -5,6 +5,7 @@ import type { PaymentMethod } from "@/features/pos/types";
 import { costProduct } from "@/features/products/costing";
 import { unavailableReason } from "@/features/products/types";
 import { addDays, costOf, revenueOf } from "@/features/sales/report";
+import { orderLabel } from "@/lib/dates";
 
 // The dashboard's numbers, worked out from rows its queries fetch. Pure functions, so they're
 // unit-tested without a database. Rows come in centavos, as stored; everything out is pesos.
@@ -121,7 +122,7 @@ export function recentTransactionRows(
   today: string,
 ) {
   return orders.map((o) => ({
-    id: `#${o.number}`,
+    id: orderLabel(o.number),
     time:
       o.date === today
         ? manilaTime(o.completedAt)

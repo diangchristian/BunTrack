@@ -49,6 +49,9 @@ function PaymentForm({
   onPaid: (receipt: Receipt) => void;
   onBack: () => void;
 }) {
+  // One id for this payment, sent with every attempt: a double tap or a retry can't save it twice.
+  // PaymentForm mounts each time the dialog opens, so every payment gets a fresh one.
+  const [clientRequestId] = useState(() => crypto.randomUUID());
   const [method, setMethod] = useState<PaymentMethod>("cash");
   const [cashInput, setCashInput] = useState("");
   const [error, setError] = useState<string>();
@@ -64,6 +67,7 @@ function PaymentForm({
     setError(undefined);
     startTransition(async () => {
       const result = await completeOrder({
+        clientRequestId,
         method,
         amountReceived: method === "cash" ? received : 0,
         lines: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity })),

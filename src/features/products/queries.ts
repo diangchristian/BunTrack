@@ -2,20 +2,30 @@ import "server-only";
 
 import { connection } from "next/server";
 
-import { inventoryStore } from "@/features/inventory/store";
+import { listInventoryItems, listRecipes } from "@/features/inventory/queries";
+import { db } from "@/lib/db";
 import { costProduct } from "./costing";
-import { productStore } from "./store";
 import type { CostedProduct } from "./types";
 
 /**
- * All products with cost and servings left worked out from their recipes and current
+ * All active products with cost and servings left worked out from their recipes and current
  * Inventory. Read at request time so stock and price changes show up immediately.
  */
 export async function getProducts(): Promise<CostedProduct[]> {
   await connection();
-  const items = inventoryStore.items();
-  return productStore.list().map((product) => ({
+  const [rows, items, recipes] = await Promise.all([
+    db.product.findMany({
+      where: { archivedAt: null },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true, description: true, categoryId: true, price: true, pieces: true, image: true, available: true },
+    }),
+    listInventoryItems(),
+    listRecipes(),
+  ]);
+  return rows.map(({ categoryId, image, ...product }) => ({
     ...product,
-    ...costProduct(product, inventoryStore.recipe(product.id), items),
+    category: categoryId,
+    ...(image && { image }),
+    ...costProduct(product, recipes[product.id] ?? [], items),
   }));
 }

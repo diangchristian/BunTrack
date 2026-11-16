@@ -261,19 +261,22 @@ enum PaymentMethod {
 
 /// A completed sale. Never edited: its lines keep the price and cost of that moment.
 model Order {
-  id             String          @id @default(uuid())
+  id              String          @id @default(uuid())
   /// Shown as "#1001". The migration starts the sequence at 1001.
-  number         Int             @unique @default(autoincrement())
-  completedAt    DateTime        @default(now())
+  number          Int             @unique @default(autoincrement())
+  /// Made by the browser once per payment and sent with every attempt. UNIQUE, so a double tap
+  /// or a retry on a slow network can't save the same sale (and deduct its stock) twice.
+  clientRequestId String          @unique
+  completedAt     DateTime        @default(now())
   /// The Manila calendar day, for "today" and daily reports without time-zone maths.
-  date           DateTime        @db.Date
-  cashierId      String
-  cashier        User            @relation(fields: [cashierId], references: [id], onDelete: Restrict)
-  method         PaymentMethod
+  date            DateTime        @db.Date
+  cashierId       String
+  cashier         User            @relation(fields: [cashierId], references: [id], onDelete: Restrict)
+  method          PaymentMethod
   /// Cash handed over, in centavos (the total, for GCash). Change = received - total.
-  amountReceived Int
-  lines          OrderLine[]
-  stockMovements StockMovement[]
+  amountReceived  Int
+  lines           OrderLine[]
+  stockMovements  StockMovement[]
 
   @@index([date])
   @@map("order")

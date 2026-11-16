@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Coins, Info, Package, Receipt, ShoppingCart, TrendingUp } from "lucide-react";
+import { Coins, Package, Receipt, ShoppingCart, TrendingUp } from "lucide-react";
 
 import { NoAccess } from "@/components/no-access";
 import { canUseStore } from "@/features/auth/queries";
 import { SegmentedLinks } from "@/components/segmented-links";
 import { StatCard } from "@/components/stat-card";
-import { categoryStore } from "@/features/categories/store";
+import { listCategories } from "@/features/categories/queries";
 import { categoryLabel } from "@/features/categories/types";
 import { ProductPerformance } from "@/features/sales/components/product-performance";
 import { RevenueChart } from "@/features/sales/components/revenue-chart";
@@ -24,7 +24,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
   if (!(await canUseStore())) return <NoAccess page="Sales & Reports" />;
 
   const { period, business } = parseReportParams(await searchParams);
-  const { range, report, includesSample } = await getSalesReport(period, business);
+  const [{ range, report }, categories] = await Promise.all([getSalesReport(period, business), listCategories()]);
   const { kpis } = report;
   const prevLabel = range.prevFrom === range.prevTo ? shortDate(range.prevFrom) : `${shortDate(range.prevFrom)}–${shortDate(range.prevTo)}`;
   const totalByMethod = report.byMethod.reduce((sum, m) => sum + m.revenue, 0);
@@ -45,13 +45,6 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
           {range.from === range.to ? shortDate(range.from) : `${shortDate(range.from)} – ${shortDate(range.to)}`}, compared with {prevLabel}
         </span>
       </div>
-
-      {includesSample && (
-        <p className="flex items-center gap-2 rounded-[10px] bg-secondary px-3 py-2 text-xs text-muted-foreground">
-          <Info className="size-4 shrink-0" aria-hidden />
-          Includes sample orders so this page has data to show. Your real POS sales are added on top; both reset when the server restarts until the database is connected.
-        </p>
-      )}
 
       <section aria-label="Sales summary" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard label="Total Revenue" value={formatPeso(kpis.revenue / 100)} icon={Coins} delta={vsPrevious(kpis.revenue, kpis.previousRevenue, prevLabel)} />
@@ -96,7 +89,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
               <p className="text-xs font-semibold text-muted-foreground">By category</p>
               {report.byCategory.map((c) => (
                 <p key={c.category} className="flex items-center gap-2.5 text-xs">
-                  <span className="w-24 shrink-0 text-muted-foreground">{categoryLabel(c.category, categoryStore.list())}</span>
+                  <span className="w-24 shrink-0 text-muted-foreground">{categoryLabel(c.category, categories)}</span>
                   <span className="h-2 flex-1 rounded-full bg-neutral-soft" aria-hidden>
                     <span className="block h-2 rounded-full bg-chart-1" style={{ width: `${topCategory ? (c.revenue / topCategory) * 100 : 0}%` }} />
                   </span>
@@ -109,7 +102,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
       </div>
 
       <section className="rounded-xl border bg-card p-5 shadow-[0_2px_8px_rgb(31_26_23/0.06)]">
-        <ProductPerformance products={report.products} categories={categoryStore.list()} />
+        <ProductPerformance products={report.products} categories={categories} />
       </section>
       <section className="rounded-xl border bg-card p-5 shadow-[0_2px_8px_rgb(31_26_23/0.06)]">
         <TransactionHistory key={`${period}-${business}`} transactions={report.transactions} />

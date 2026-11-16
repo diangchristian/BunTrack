@@ -6,20 +6,77 @@ import { z } from "zod";
 import { formText } from "@/lib/forms";
 import { logActivity } from "@/features/activity/log";
 import { canUseStore, getCurrentUser } from "@/features/auth/queries";
-import { productStore } from "@/features/products/store";
-import { itemFormSchema, movementFormSchema, openingStockIn } from "./schemas";
-import { inventoryStore } from "./store";
+import { toDbDate as asDate } from "@/lib/dates";
+import { db } from "@/lib/db";
 import { formatQuantity } from "./costing";
+import { planMovement, type MovementInput } from "./movements";
+import { movementTypeToDb, toInventoryItem } from "./queries";
+import { itemFormSchema, movementFormSchema, openingStockIn } from "./schemas";
 import { units } from "./types";
 
 export type InventoryFormState = { ok?: boolean; error?: string; fieldErrors?: Record<string, string[] | undefined> };
+
+const CHANGED = "Someone just changed this item's stock. Check the amount and try again.";
+
+/** The ledger row for a planned movement: one place that decides what a movement records. */
+function movementRow(itemId: string, input: MovementInput, plan: Extract<ReturnType<typeof planMovement>, { ok: true }>, recordedById: string) {
+  return {
+    itemId,
+    type: movementTypeToDb[input.type],
+    change: plan.change,
+    unitCost: plan.unitCost ?? null,
+    reference: plan.reference ?? null,
+    supplier: plan.supplier ?? null,
+    note: plan.note ?? null,
+    date: asDate(input.date),
+    recordedById,
+  };
+}
+
+/**
+ * Applies one Stock In / adjustment / waste: the item's quantity and its movement row change
+ * together in one transaction, or not at all. Returns the quantity before and after.
+ */
+async function applyMovement(input: MovementInput, recordedById: string) {
+  return db.$transaction(async (tx) => {
+    const row = await tx.inventoryItem.findFirst({ where: { id: input.itemId, archivedAt: null } });
+    if (!row) return { ok: false as const, error: "This item no longer exists." };
+    const plan = planMovement(input, toInventoryItem(row));
+    if (!plan.ok) return plan;
+
+    let after: number;
+    if (input.type === "stock-in") {
+      // increment is atomic, so a delivery recorded during a sale can't overwrite the sale's deduction.
+      const updated = await tx.inventoryItem.update({
+        where: { id: row.id },
+        data: { quantity: { increment: plan.change }, ...(plan.unitCost !== undefined && { unitCost: plan.unitCost }) },
+      });
+      after = updated.quantity;
+    } else {
+      // Waste only succeeds while there's still enough (two people can't both throw away the last
+      // kilo). An adjustment sets what was counted, but only if nothing sold in the meantime:
+      // otherwise the sale's deduction would be overwritten and the ledger stop adding up.
+      const { count } = await tx.inventoryItem.updateMany({
+        where: input.type === "waste" ? { id: row.id, quantity: { gte: input.quantity } } : { id: row.id, quantity: row.quantity },
+        data: input.type === "waste" ? { quantity: { decrement: input.quantity } } : { quantity: plan.newQuantity },
+      });
+      if (count === 0) return { ok: false as const, error: CHANGED };
+      after = (await tx.inventoryItem.findUniqueOrThrow({ where: { id: row.id }, select: { quantity: true } })).quantity;
+    }
+
+    await tx.stockMovement.create({ data: movementRow(row.id, input, plan, recordedById) });
+    // From what the database saved, so the activity log is right even if a sale landed in between.
+    return { ok: true as const, before: after - plan.change, after };
+  });
+}
 
 /** Stock In / Adjustment / Waste from the movement dialog. */
 export async function recordStockMovement(_prev: InventoryFormState, formData: FormData): Promise<InventoryFormState> {
   if (!(await canUseStore())) return { error: "You don't have permission to change stock." };
 
-  const item = inventoryStore.items().find((i) => i.id === formText(formData, "itemId"));
-  if (!item) return { fieldErrors: { itemId: ["Pick an item"] } };
+  const row = await db.inventoryItem.findFirst({ where: { id: formText(formData, "itemId"), archivedAt: null } });
+  if (!row) return { fieldErrors: { itemId: ["Pick an item"] } };
+  const item = toInventoryItem(row);
 
   // Homemade items are counted per piece made, never by the pack.
   const parsed = movementFormSchema(item.unit, item.homemade ? undefined : item.packSize).safeParse(
@@ -27,21 +84,20 @@ export async function recordStockMovement(_prev: InventoryFormState, formData: F
   );
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
 
-  const { name } = await getCurrentUser();
+  const user = await getCurrentUser();
   const { reference, supplier, note, ...rest } = parsed.data;
-  const result = inventoryStore.recordMovement(
+  const result = await applyMovement(
     { ...rest, reference: reference || undefined, supplier: supplier || undefined, note: note || undefined },
-    name,
+    user.id,
   );
   if (!result.ok) return { error: result.error };
 
-  const after = inventoryStore.items().find((i) => i.id === item.id)!;
   const label = { "stock-in": item.homemade ? "Batch made" : "Stock In", adjustment: "Stock adjusted", waste: "Waste recorded" }[rest.type];
   await logActivity({
     module: "Inventory",
     action: label,
     record: item.name,
-    change: [`${formatQuantity(item.quantity, item.unit)} → ${formatQuantity(after.quantity, after.unit)}`, note].filter(Boolean).join(" · "),
+    change: [`${formatQuantity(result.before, item.unit)} → ${formatQuantity(result.after, item.unit)}`, note].filter(Boolean).join(" · "),
   });
   refresh();
   return { ok: true };
@@ -75,25 +131,34 @@ export async function addInventoryItem(_prev: InventoryFormState, formData: Form
   if (!parsed.success || Object.values(openingErrors).some(Boolean)) {
     return { fieldErrors: { ...(parsed.success ? {} : z.flattenError(parsed.error).fieldErrors), ...openingErrors } };
   }
-  const { minimum, ...values } = parsed.data;
+  const { minimum, packSize, homemade, ...values } = parsed.data;
+  const user = await getCurrentUser();
 
-  // No cost until the first Stock In: cost always comes from what was actually paid.
-  const item = inventoryStore.addItem({ ...values, quantity: 0, unitCost: 0, minimum: Math.round(minimum * units[values.unit].factor) });
+  // What's on hand now is recorded as the first Stock In, by the same rules as any other.
+  const openingMove: MovementInput | undefined = opening && { type: "stock-in", itemId: "", ...opening, note: "On hand when added" };
+  const openingPlan = openingMove && planMovement(openingMove, { quantity: 0, unit: values.unit, homemade });
+
+  // The item and its opening stock are saved together, so a failure never leaves half of it.
+  await db.$transaction(async (tx) => {
+    const item = await tx.inventoryItem.create({
+      data: {
+        ...values,
+        packSize: packSize ?? null,
+        homemade,
+        minimum: Math.round(minimum * units[values.unit].factor),
+        // No cost until the first Stock In: cost always comes from what was actually paid.
+        quantity: openingPlan?.ok ? openingPlan.newQuantity : 0,
+        unitCost: (openingPlan?.ok && openingPlan.unitCost) || 0,
+      },
+    });
+    if (openingMove && openingPlan?.ok) await tx.stockMovement.create({ data: movementRow(item.id, openingMove, openingPlan, user.id) });
+  });
+
   await logActivity({ module: "Inventory", action: "Item added", record: values.name, change: values.category });
-
   if (opening) {
-    const { name } = await getCurrentUser();
-    const saved = inventoryStore.recordMovement(
-      { type: "stock-in", itemId: item.id, quantity: opening.quantity, unitCost: opening.unitCost, note: "On hand when added", date: opening.date },
-      name,
-    );
-    if (!saved.ok) {
-      refresh();
-      return { error: `${values.name} was added, but its stock on hand wasn't saved (${saved.error}). Record it with Stock In.` };
-    }
     await logActivity({
       module: "Inventory",
-      action: values.homemade ? "Batch made" : "Stock In",
+      action: homemade ? "Batch made" : "Stock In",
       record: values.name,
       change: `0 → ${formatQuantity(opening.quantity, values.unit)} · on hand when added`,
     });
@@ -110,15 +175,19 @@ const recipeSchema = z
 /** Costing & Pricing → Save recipe. Quantities are per serving, in the item's small unit. */
 export async function saveRecipe(productId: string, lines: unknown): Promise<InventoryFormState> {
   if (!(await canUseStore())) return { error: "You don't have permission to change recipes." };
-  if (!productStore.list().some((p) => p.id === productId)) return { error: "This product no longer exists." };
+  const product = await db.product.findFirst({ where: { id: productId, archivedAt: null }, select: { name: true } });
+  if (!product) return { error: "This product no longer exists." };
 
   const parsed = recipeSchema.safeParse(lines);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
-  const known = new Set(inventoryStore.items().map((i) => i.id));
-  if (parsed.data.some((l) => !known.has(l.itemId))) return { error: "One of the ingredients no longer exists." };
+  const known = await db.inventoryItem.count({ where: { id: { in: parsed.data.map((l) => l.itemId) }, archivedAt: null } });
+  if (known !== parsed.data.length) return { error: "One of the ingredients no longer exists." };
 
-  inventoryStore.setRecipe(productId, parsed.data);
-  const product = productStore.list().find((p) => p.id === productId)!;
+  // Replaced as a whole, in one transaction, so a product never ends up with half a recipe.
+  await db.$transaction([
+    db.recipeLine.deleteMany({ where: { productId } }),
+    db.recipeLine.createMany({ data: parsed.data.map((l) => ({ productId, ...l })) }),
+  ]);
   await logActivity({ module: "Costing", action: "Recipe updated", record: product.name, change: `${parsed.data.length} ingredient${parsed.data.length === 1 ? "" : "s"}` });
   refresh();
   return { ok: true };
