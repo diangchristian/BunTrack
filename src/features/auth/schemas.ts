@@ -1,17 +1,37 @@
 import { z } from "zod";
 
-import { passwordSchema } from "@/features/users/schemas";
+import { passwordSchema, usernameSchema } from "@/features/users/schemas";
+
+const NOT_AN_IDENTIFIER = "Enter your email or username";
+
+/**
+ * One box for either: anything with an "@" is an email, anything else a username.
+ * Both come out lowercase, the way Better Auth looks them up.
+ */
+const identifierSchema = z
+  .string({ error: NOT_AN_IDENTIFIER })
+  .trim()
+  .toLowerCase()
+  .pipe(
+    z.union(
+      [
+        z.email().transform((email) => ({ by: "email" as const, email })),
+        usernameSchema.transform((username) => ({ by: "username" as const, username })),
+      ],
+      { error: NOT_AN_IDENTIFIER },
+    ),
+  );
 
 export const loginSchema = z.object({
-  email: z.email({ error: "Enter a valid email address" }),
-  password: z.string().min(1, { error: "Enter your password" }),
+  identifier: identifierSchema,
+  password: z.string({ error: "Enter your password" }).min(1, { error: "Enter your password" }),
 });
 
 export type LoginFormState = {
-  email?: string;
+  identifier?: string;
   /** Wrong credentials, a lock or a deactivated account: not tied to one field. */
   error?: string;
-  errors?: { email?: string[]; password?: string[] };
+  errors?: { identifier?: string[]; password?: string[] };
 };
 
 export const changePasswordSchema = z

@@ -3,20 +3,25 @@ import { test } from "node:test";
 
 import { changePasswordSchema, loginSchema } from "./schemas";
 
-test("accepts a valid email and password", () => {
-  const result = loginSchema.safeParse({ email: "maria@bunandpatty.ph", password: "secret" });
-  assert.equal(result.success, true);
+test("signs in with an email or a username, plus a password", () => {
+  assert.deepEqual(loginSchema.parse({ identifier: " Maria@BunAndPatty.ph ", password: "secret" }), {
+    identifier: { by: "email", email: "maria@bunandpatty.ph" },
+    password: "secret",
+  });
+  assert.deepEqual(loginSchema.parse({ identifier: " Maria_R ", password: "secret" }), {
+    identifier: { by: "username", username: "maria_r" },
+    password: "secret",
+  });
 });
 
-test("rejects a malformed email and an empty password", () => {
-  const result = loginSchema.safeParse({ email: "maria", password: "" });
-  assert.equal(result.success, false);
-  const fields = result.error!.issues.map((issue) => issue.path[0]);
-  assert.deepEqual(fields.sort(), ["email", "password"]);
+test("rejects something that's neither, and an empty password", () => {
+  const result = loginSchema.safeParse({ identifier: "maria reyes", password: "" });
+  assert.deepEqual(result.error!.issues.map((issue) => issue.path[0]).sort(), ["identifier", "password"]);
+  assert.equal(loginSchema.safeParse({ identifier: "maria@", password: "x" }).success, false, "has an @ but isn't an email");
 });
 
 test("rejects missing fields (FormData.get returns null)", () => {
-  const result = loginSchema.safeParse({ email: null, password: null });
+  const result = loginSchema.safeParse({ identifier: null, password: null });
   assert.equal(result.success, false);
 });
 

@@ -7,6 +7,7 @@ import { randomUUID } from "node:crypto";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { hashPassword } from "better-auth/crypto";
 
+import { usernameSchema } from "../src/features/users/schemas";
 import { PrismaClient } from "../src/generated/prisma/client";
 
 const db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: process.env.DATABASE_URL }) });
@@ -18,9 +19,17 @@ async function main() {
   if (!email || !password || password.length < 8) {
     throw new Error("Set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD (8+ characters) in .env");
   }
+  // Optional; the same rules as the Users page. Stored lowercase for sign-in, as typed for display.
+  const typed = process.env.SEED_ADMIN_USERNAME?.trim() || null;
+  const display = typed && usernameSchema.parse(typed);
+  const usernames = { username: display?.toLowerCase() ?? null, displayUsername: display };
 
-  if (await db.user.findUnique({ where: { email } })) {
-    console.log(`Admin ${email} already exists, nothing to do.`);
+  const existing = await db.user.findUnique({ where: { email } });
+  if (existing) {
+    if (display && !existing.username) {
+      await db.user.update({ where: { email }, data: usernames });
+      console.log(`Admin ${email} now signs in as "${display}" too.`);
+    } else console.log(`Admin ${email} already exists, nothing to do.`);
     return;
   }
 
@@ -32,6 +41,7 @@ async function main() {
       id,
       name,
       email,
+      ...usernames,
       role: "Administrator",
       accounts: { create: { id: randomUUID(), providerId: "credential", accountId: id, password: await hashPassword(password) } },
     },

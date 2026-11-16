@@ -20,10 +20,10 @@ npm run db:seed             # create the first administrator from SEED_ADMIN_*
 npm run dev                 # http://localhost:3000, sign in as SEED_ADMIN_EMAIL
 ```
 
-Sign-in is Better Auth with email and password (`src/lib/auth.ts`). Public sign-up is
-off: the seeded administrator adds everyone else on **Users & Roles** and sets their
-first password. Anyone can change their own password from the key icon in the sidebar.
-The login form allows 5 tries per email, then locks that email for 15 minutes.
+Sign-in is Better Auth with an email **or username** and a password (`src/lib/auth.ts`,
+username plugin). Public sign-up is off: the seeded administrator adds everyone else on
+**Users & Roles**, sets their first password and, optionally, a username. Anyone can change their own password from the key icon in the sidebar.
+The login form allows 5 tries per account (email and username count together), then locks it for 15 minutes.
 
 ## Scripts
 

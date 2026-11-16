@@ -59,15 +59,16 @@ const navGroups = [
     label: "Admin",
     items: [
       { title: "Users & Roles", href: "/users", access: "admin", icon: Users },
-      { title: "Activity Logs", href: "/activity", access: "manager", icon: Activity },
+      { title: "Activity Logs", href: "/activity", access: "admin", icon: Activity },
       { title: "Settings", href: "/settings", access: "admin", icon: Settings },
     ],
   },
 ];
 
 /** Mirrors Users & Roles → Permissions. Hiding is only a convenience; each page checks on the server. */
-const canSee = (access: string, role: string) =>
-  !role || access !== "admin" || role === "Administrator";
+// While the sidebar streams in, the placeholder has no role yet: admin links stay hidden until
+// the real role arrives, so a family member never sees them flash.
+const canSee = (access: string, role: string) => access !== "admin" || role === "Administrator";
 
 export function AppSidebar({ user }: { user: { name: string; role: string } }) {
   const pathname = usePathname();

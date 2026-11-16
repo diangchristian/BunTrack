@@ -1,0 +1,307 @@
+// BunTrack database schema, from prisma/schema.prisma.
+// Paste this whole file into https://dbdiagram.io (left-hand editor).
+// Money is whole centavos (P149.00 = 14900). Stock quantities are the item's small unit (pc, g, ml).
+// Sign-in tables are live on Neon; the app tables are a draft, not migrated yet.
+
+Project BunTrack {
+  database_type: 'PostgreSQL'
+  Note: 'Burger shop + Dan Eric ice cream. Prisma 7 on Neon Postgres.'
+}
+
+// ───────────── Enums ─────────────
+
+Enum Unit {
+  pcs
+  kg
+  L
+}
+
+Enum MovementType {
+  "stock-in"
+  adjustment
+  waste
+  sale
+}
+
+Enum PaymentMethod {
+  cash
+  gcash
+}
+
+Enum ExpenseBusiness {
+  burger
+  iceCream
+  shared
+}
+
+// ───────────── Sign-in (Better Auth, live) ─────────────
+
+Table User {
+  id varchar [pk]
+  name varchar [not null]
+  email varchar [not null, unique]
+  emailVerified boolean [not null, default: false]
+  image varchar
+  username varchar [unique, note: 'optional, lowercase, for sign-in']
+  displayUsername varchar [note: 'optional, as typed']
+  role varchar [not null, default: 'Family member', note: 'Administrator or Family member']
+  active boolean [not null, default: true]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+  Note: 'People are deactivated, never deleted'
+}
+
+Table Session {
+  id varchar [pk]
+  token varchar [not null, unique]
+  userId varchar [not null]
+  expiresAt timestamp [not null]
+  ipAddress varchar
+  userAgent varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+  Indexes {
+    userId
+  }
+}
+
+Table Account {
+  id varchar [pk]
+  userId varchar [not null]
+  providerId varchar [not null, note: '"credential" for email/username + password']
+  accountId varchar [not null, note: 'same as the user id']
+  password varchar [note: 'hash']
+  accessToken varchar
+  refreshToken varchar
+  idToken varchar
+  accessTokenExpiresAt timestamp
+  refreshTokenExpiresAt timestamp
+  scope varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+  Indexes {
+    userId
+  }
+}
+
+Table Verification {
+  id varchar [pk]
+  identifier varchar [not null]
+  value varchar [not null]
+  expiresAt timestamp [not null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+  Indexes {
+    identifier
+  }
+}
+
+Table RateLimit {
+  id varchar [pk]
+  key varchar [not null, unique]
+  count int [not null]
+  lastRequest bigint [not null]
+  Note: 'Better Auth request counters for /api/auth (pruned after a minute)'
+}
+
+Table LoginAttempt {
+  key varchar [pk, note: '"user:<id>", or the typed email/username']
+  attempts int [not null]
+  lastFailure timestamp [not null]
+  Note: 'Login form lock: 5 tries per account, then 15 minutes'
+}
+
+// ───────────── Shop ─────────────
+
+Table Settings {
+  id int [pk, default: 1, note: 'always 1: one row']
+  shopName varchar [not null]
+  contactNumber varchar [not null, default: '']
+  address varchar [not null, default: '']
+  receiptFooter varchar [not null, default: '']
+  updatedAt timestamp [not null]
+}
+
+Table Category {
+  id varchar [pk, note: 'slug, e.g. "burgers", "iceCream" (locked in code)']
+  label varchar [not null]
+  position int [not null, note: 'menu order']
+}
+
+// ───────────── Menu ─────────────
+
+Table Product {
+  id varchar [pk]
+  name varchar [not null]
+  description varchar [not null, default: '']
+  categoryId varchar [not null]
+  price int [not null, note: 'centavos per order']
+  pieces int [not null, default: 1, note: '1, or 2 for Buy 1 Take 1; recipe is per piece']
+  image text [note: 'small data URL, or null for the category icon']
+  available boolean [not null, default: true, note: 'switched on by the owner; sold out is worked out from stock']
+  archivedAt timestamp [note: 'set instead of deleting']
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+  Indexes {
+    categoryId
+  }
+}
+
+// ───────────── Inventory ─────────────
+
+Table InventoryItem {
+  id varchar [pk]
+  name varchar [not null]
+  category varchar [not null, note: 'Produce, Frozen, "Ice Cream (Dan Eric)"... (checked by the app)']
+  unit Unit [not null]
+  quantity int [not null, default: 0, note: 'on hand, small unit']
+  minimum int [not null, default: 0, note: 'reorder point, small unit']
+  unitCost int [not null, default: 0, note: 'centavos per kg / L / pc; 0 = no cost yet']
+  packSize int [note: 'one pack, small unit; null = not by the pack']
+  homemade boolean [not null, default: false]
+  archivedAt timestamp
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table RecipeLine {
+  productId varchar [not null]
+  itemId varchar [not null]
+  quantity int [not null, note: 'small unit, per piece']
+  Indexes {
+    (productId, itemId) [pk]
+    itemId
+  }
+}
+
+Table StockMovement {
+  id varchar [pk]
+  itemId varchar [not null]
+  type MovementType [not null]
+  change int [not null, note: 'signed: +5000 in, -15 sold']
+  unitCost int [note: 'Stock In only, centavos per big unit']
+  reference varchar [note: 'Stock In receipt no.']
+  supplier varchar [note: 'Palengke, Shopee, Made in-house, Dan Eric']
+  note varchar [note: 'adjustment / waste reason']
+  orderId varchar [note: 'sales only']
+  date date [not null]
+  recordedById varchar [not null]
+  createdAt timestamp [not null, default: `now()`]
+  Indexes {
+    (itemId, createdAt)
+    orderId
+  }
+  Note: 'The stock ledger: never edited or deleted'
+}
+
+// ───────────── Sales ─────────────
+
+Table Order {
+  id varchar [pk]
+  number int [not null, unique, increment, note: 'shown as #1001; sequence starts at 1001']
+  completedAt timestamp [not null, default: `now()`]
+  date date [not null, note: 'Manila calendar day']
+  cashierId varchar [not null]
+  method PaymentMethod [not null]
+  amountReceived int [not null, note: 'centavos; change = received - total']
+  Indexes {
+    date
+  }
+}
+
+Table OrderLine {
+  id varchar [pk]
+  orderId varchar [not null]
+  productId varchar [not null]
+  name varchar [not null, note: 'snapshot']
+  categoryId varchar [not null, note: 'snapshot']
+  quantity int [not null]
+  unitPrice int [not null, note: 'snapshot, centavos per order']
+  unitCost int [not null, note: 'snapshot, centavos per order']
+  Indexes {
+    orderId
+    productId
+  }
+}
+
+// ───────────── Expenses ─────────────
+
+Table Expense {
+  id varchar [pk]
+  date date [not null]
+  category varchar [not null, note: 'Electricity, LPG / Cooking gas... (checked by the app)']
+  business ExpenseBusiness [not null, note: 'shared = one bill for both']
+  description varchar [not null]
+  amount int [not null, note: 'centavos']
+  paidVia PaymentMethod [not null]
+  recordedById varchar [not null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+  Indexes {
+    date
+  }
+}
+
+// ───────────── Activity ─────────────
+
+Table ActivityEntry {
+  id varchar [pk]
+  at timestamp [not null, default: `now()`]
+  userId varchar [not null]
+  module varchar [not null, note: 'POS, Inventory, ... (checked by the app)']
+  action varchar [not null]
+  record varchar [not null]
+  change varchar
+  Indexes {
+    at
+  }
+  Note: 'Never edited or deleted; owner-only page'
+}
+
+// ───────────── Relationships ─────────────
+// "<" = one-to-many. cascade deletes the related rows; restrict refuses the delete.
+
+Ref: User.id < Session.userId [delete: cascade]
+Ref: User.id < Account.userId [delete: cascade]
+Ref: User.id < Order.cashierId [delete: restrict]
+Ref: User.id < StockMovement.recordedById [delete: restrict]
+Ref: User.id < Expense.recordedById [delete: restrict]
+Ref: User.id < ActivityEntry.userId [delete: restrict]
+
+Ref: Category.id < Product.categoryId [delete: restrict]
+Ref: Product.id < RecipeLine.productId [delete: cascade]
+Ref: InventoryItem.id < RecipeLine.itemId [delete: restrict]
+Ref: InventoryItem.id < StockMovement.itemId [delete: restrict]
+
+Ref: Order.id < OrderLine.orderId [delete: cascade]
+Ref: Product.id < OrderLine.productId [delete: restrict]
+Ref: Order.id < StockMovement.orderId [delete: restrict]
+
+// Table groups (coloured boxes in dbdiagram)
+TableGroup SignIn {
+  User
+  Session
+  Account
+  Verification
+  RateLimit
+  LoginAttempt
+}
+
+TableGroup MenuAndStock {
+  Category
+  Product
+  InventoryItem
+  RecipeLine
+  StockMovement
+}
+
+TableGroup SalesAndMoney {
+  Order
+  OrderLine
+  Expense
+}
+
+TableGroup Shop {
+  Settings
+  ActivityEntry
+}

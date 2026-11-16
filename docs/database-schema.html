@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BunTrack Database Schema</title>
+<style>
+  body { font-family: system-ui, "Segoe UI", sans-serif; color: #1f1a17; background: #fff; margin: 0; line-height: 1.5; }
+  main { max-width: 1000px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { margin: 0 0 4px; }
+  h2 { margin-top: 40px; border-bottom: 2px solid #c2410c; padding-bottom: 4px; }
+  .note { color: #6b625b; }
+  .status { display: inline-block; background: #fff1e6; color: #c2410c; padding: 2px 10px; border-radius: 999px; font-weight: 600; font-size: 14px; }
+  .diagram { overflow-x: auto; border: 1px solid #ece7e1; border-radius: 8px; padding: 16px; background: #faf8f5; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { border: 1px solid #ece7e1; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #faf8f5; }
+  code { background: #f1eeea; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  .cascade { color: #b45309; font-weight: 600; }
+  .restrict { color: #15803d; font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <h1>BunTrack Database Schema</h1>
+  <p class="note">From <code>prisma/schema.prisma</code>. <span class="status">App tables not migrated yet</span></p>
+  <p>16 tables (10 new for the app, 6 for sign-in, already live on Neon) and 4 enums. Money is whole <b>centavos</b> (₱149.00 = <code>14900</code>); stock quantities are the item's <b>small unit</b> (pc, g, ml).</p>
+
+  <h2>How the tables connect</h2>
+  <p class="note">Read each line from the "one" side to the "many" side: one category has many products.</p>
+  <div class="diagram"><pre class="mermaid">
+erDiagram
+  User ||--o{ Session : "signed in on"
+  User ||--o{ Account : "signs in with"
+  User ||--o{ Order : "rang up"
+  User ||--o{ StockMovement : "recorded"
+  User ||--o{ Expense : "recorded"
+  User ||--o{ ActivityEntry : "did"
+  Category ||--o{ Product : "groups"
+  Product ||--o{ RecipeLine : "is made from"
+  InventoryItem ||--o{ RecipeLine : "is used in"
+  InventoryItem ||--o{ StockMovement : "changes by"
+  Order ||--|{ OrderLine : "contains"
+  Product ||--o{ OrderLine : "sold as"
+  Order |o--o{ StockMovement : "deducted stock"
+  </pre></div>
+  <p class="note">Not linked to anything: <code>Settings</code> (one row), <code>Verification</code>, <code>RateLimit</code> and <code>LoginAttempt</code> (sign-in helpers).</p>
+
+  <h2>Every column</h2>
+  <p class="note"><code>PK</code> primary key, <code>FK</code> points at another table, <code>UK</code> unique. Quoted notes mark optional columns or units.</p>
+  <div class="diagram"><pre class="mermaid">
+erDiagram
+  User {
+    string id PK
+    string name
+    string email UK
+    string username UK "optional, lowercase"
+    string displayUsername "optional, as typed"
+    string role "Administrator or Family member"
+    boolean active
+  }
+  Session {
+    string id PK
+    string token UK
+    string userId FK
+    datetime expiresAt
+  }
+  Account {
+    string id PK
+    string userId FK
+    string providerId "credential"
+    string password "hash"
+  }
+  Category {
+    string id PK "slug, e.g. iceCream"
+    string label
+    int position "menu order"
+  }
+  Product {
+    string id PK
+    string name
+    string description
+    string categoryId FK
+    int price "centavos per order"
+    int pieces "1, or 2 for B1T1"
+    string image "optional"
+    boolean available
+    datetime archivedAt "optional"
+  }
+  InventoryItem {
+    string id PK
+    string name
+    string category "Produce, Frozen, ..."
+    Unit unit "pcs, kg or L"
+    int quantity "on hand"
+    int minimum "reorder point"
+    int unitCost "centavos per kg, L or pc"
+    int packSize "optional"
+    boolean homemade
+    datetime archivedAt "optional"
+  }
+  RecipeLine {
+    string productId PK, FK
+    string itemId PK, FK
+    int quantity "per piece"
+  }
+  StockMovement {
+    string id PK
+    string itemId FK
+    MovementType type
+    int change "signed, +5000 or -15"
+    int unitCost "optional"
+    string reference "optional"
+    string supplier "optional"
+    string note "optional"
+    string orderId FK "optional, sales"
+    date date
+    string recordedById FK
+  }
+  Order {
+    string id PK
+    int number UK "shown as #1001"
+    datetime completedAt
+    date date "Manila day"
+    string cashierId FK
+    PaymentMethod method
+    int amountReceived "centavos"
+  }
+  OrderLine {
+    string id PK
+    string orderId FK
+    string productId FK
+    string name "snapshot"
+    string categoryId "snapshot"
+    int quantity
+    int unitPrice "snapshot, centavos"
+    int unitCost "snapshot, centavos"
+  }
+  Expense {
+    string id PK
+    date date
+    string category "Electricity, LPG, ..."
+    ExpenseBusiness business
+    string description
+    int amount "centavos"
+    PaymentMethod paidVia
+    string recordedById FK
+  }
+  ActivityEntry {
+    string id PK
+    datetime at
+    string userId FK
+    string module "POS, Inventory, ..."
+    string action
+    string record
+    string change "optional"
+  }
+  Settings {
+    int id PK "always 1"
+    string shopName
+    string contactNumber
+    string address
+    string receiptFooter
+  }
+  User ||--o{ Session : ""
+  User ||--o{ Account : ""
+  User ||--o{ Order : ""
+  User ||--o{ StockMovement : ""
+  User ||--o{ Expense : ""
+  User ||--o{ ActivityEntry : ""
+  Category ||--o{ Product : ""
+  Product ||--o{ RecipeLine : ""
+  InventoryItem ||--o{ RecipeLine : ""
+  InventoryItem ||--o{ StockMovement : ""
+  Order ||--|{ OrderLine : ""
+  Product ||--o{ OrderLine : ""
+  Order |o--o{ StockMovement : ""
+  </pre></div>
+
+  <h2>Relationships and delete rules</h2>
+  <p><span class="cascade">Cascade</span> deletes the related rows too. <span class="restrict">Restrict</span> refuses the delete while related rows exist, which protects history. The app archives products and items and deactivates people, so these are a safety net.</p>
+  <table>
+    <tr><th>One</th><th>Many</th><th>Through</th><th>On delete</th><th>Why</th></tr>
+    <tr><td>User</td><td>Session</td><td><code>userId</code></td><td class="cascade">Cascade</td><td>A removed account's sign-ins go with it.</td></tr>
+    <tr><td>User</td><td>Account</td><td><code>userId</code></td><td class="cascade">Cascade</td><td>The password hash belongs to the person.</td></tr>
+    <tr><td>User</td><td>Order</td><td><code>cashierId</code></td><td class="restrict">Restrict</td><td>Past sales keep their cashier. Deactivate people instead.</td></tr>
+    <tr><td>User</td><td>StockMovement</td><td><code>recordedById</code></td><td class="restrict">Restrict</td><td>The stock history says who moved what.</td></tr>
+    <tr><td>User</td><td>Expense</td><td><code>recordedById</code></td><td class="restrict">Restrict</td><td>Same, for expenses.</td></tr>
+    <tr><td>User</td><td>ActivityEntry</td><td><code>userId</code></td><td class="restrict">Restrict</td><td>The log can't lose its "who".</td></tr>
+    <tr><td>Category</td><td>Product</td><td><code>categoryId</code></td><td class="restrict">Restrict</td><td>A category in use can't be deleted.</td></tr>
+    <tr><td>Product</td><td>RecipeLine</td><td><code>productId</code></td><td class="cascade">Cascade</td><td>A recipe means nothing without its product.</td></tr>
+    <tr><td>InventoryItem</td><td>RecipeLine</td><td><code>itemId</code></td><td class="restrict">Restrict</td><td>An ingredient can't vanish from a recipe that uses it.</td></tr>
+    <tr><td>InventoryItem</td><td>StockMovement</td><td><code>itemId</code></td><td class="restrict">Restrict</td><td>The ledger stays complete; archive the item instead.</td></tr>
+    <tr><td>Order</td><td>OrderLine</td><td><code>orderId</code></td><td class="cascade">Cascade</td><td>Lines are part of the order.</td></tr>
+    <tr><td>Product</td><td>OrderLine</td><td><code>productId</code></td><td class="restrict">Restrict</td><td>Sold products are archived, so receipts and reports stay correct.</td></tr>
+    <tr><td>Order</td><td>StockMovement</td><td><code>orderId</code> (optional)</td><td class="restrict">Restrict</td><td>Only sales have an order.</td></tr>
+  </table>
+
+  <h2>Decisions to check</h2>
+  <table>
+    <tr><th>Decision</th><th>Example</th><th>Why</th></tr>
+    <tr><td>Money is whole centavos</td><td>₱149.00 → <code>14900</code></td><td>Totals never pick up rounding errors.</td></tr>
+    <tr><td>Stock in small units</td><td>2.5 kg onions → <code>2500</code>, unit <code>kg</code></td><td>Small deductions (15 g of lettuce) never drift.</td></tr>
+    <tr><td>Order lines are snapshots</td><td><code>unitPrice 16900</code></td><td>Editing a product later never rewrites past revenue or profit.</td></tr>
+    <tr><td>Stock is a ledger</td><td><code>+5000</code> Stock In, <code>-15</code> sale</td><td>Every change is a row that's never edited; <code>quantity</code> is the running total.</td></tr>
+    <tr><td>Archive, don't delete</td><td><code>archivedAt</code> set</td><td>Orders, recipes and the ledger point at products and items.</td></tr>
+    <tr><td>"Who" links to the account</td><td><code>cashierId</code> → User</td><td>A renamed family member shows their current name everywhere.</td></tr>
+    <tr><td>Order numbers from 1001</td><td><code>#1001</code>, <code>#1002</code></td><td>A database sequence, so two tills can't take the same number.</td></tr>
+    <tr><td>Some lists stay text</td><td><code>"Ice Cream (Dan Eric)"</code></td><td>Names with spaces can't be enum values; the app checks them.</td></tr>
+  </table>
+
+  <h2>Enums</h2>
+  <table>
+    <tr><th>Enum</th><th>Values</th></tr>
+    <tr><td><code>Unit</code></td><td><code>pcs</code> <code>kg</code> <code>L</code></td></tr>
+    <tr><td><code>MovementType</code></td><td><code>stock-in</code> <code>adjustment</code> <code>waste</code> <code>sale</code></td></tr>
+    <tr><td><code>PaymentMethod</code></td><td><code>cash</code> <code>gcash</code></td></tr>
+    <tr><td><code>ExpenseBusiness</code></td><td><code>burger</code> <code>iceCream</code> <code>shared</code></td></tr>
+  </table>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: "neutral" });</script>
+</body>
+</html>

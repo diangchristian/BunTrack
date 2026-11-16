@@ -8,7 +8,7 @@ import type { User } from "./types";
 export async function listUsers(): Promise<User[]> {
   const rows = await db.user.findMany({
     orderBy: { createdAt: "asc" },
-    select: { id: true, name: true, email: true, role: true, active: true },
+    select: { id: true, name: true, email: true, username: true, displayUsername: true, role: true, active: true },
   });
-  return rows.map((row) => ({ ...row, role: parseRole(row.role) }));
+  return rows.map(({ username, displayUsername, ...row }) => ({ ...row, username: displayUsername ?? username, role: parseRole(row.role) }));
 }

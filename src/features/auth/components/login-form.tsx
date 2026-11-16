@@ -13,24 +13,27 @@ export function LoginForm() {
   return (
     <form action={formAction} noValidate className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email" className="text-sm font-semibold text-muted-foreground">
-          Email
+        <Label htmlFor="identifier" className="text-sm font-semibold text-muted-foreground">
+          Email or username
         </Label>
+        {/* type="text", not "email": a username has no @. */}
         <Input
-          id="email"
-          name="email"
-          type="email"
+          id="identifier"
+          name="identifier"
+          type="text"
           autoComplete="username"
-          placeholder="you@example.com"
-          defaultValue={state.email}
-          aria-invalid={!!state.errors?.email}
-          aria-describedby={state.errors?.email ? "email-error" : undefined}
+          autoCapitalize="none"
+          spellCheck={false}
+          placeholder="you@example.com or your username"
+          defaultValue={state.identifier}
+          aria-invalid={!!state.errors?.identifier}
+          aria-describedby={state.errors?.identifier ? "identifier-error" : undefined}
           className="h-11 px-3"
           required
         />
-        {state.errors?.email && (
-          <p id="email-error" className="text-xs text-destructive">
-            {state.errors.email[0]}
+        {state.errors?.identifier && (
+          <p id="identifier-error" className="text-xs text-destructive">
+            {state.errors.identifier[0]}
           </p>
         )}
       </div>

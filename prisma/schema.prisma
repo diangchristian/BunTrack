@@ -14,18 +14,26 @@ datasource db {
 // ── Auth (Better Auth core tables, see src/lib/auth.ts) ──────────────────────
 
 model User {
-  id            String    @id
-  name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String          @id
+  name            String
+  email           String          @unique
+  emailVerified   Boolean         @default(false)
+  // Better Auth username plugin: lowercase for sign-in, and as the owner typed it
+  username        String?         @unique
+  displayUsername String?
+  image           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
   // BunTrack fields: "Administrator" or "Family member" (features/users/types.ts)
-  role          String    @default("Family member")
-  active        Boolean   @default(true)
-  sessions      Session[]
-  accounts      Account[]
+  role            String          @default("Family member")
+  active          Boolean         @default(true)
+  sessions        Session[]
+  accounts        Account[]
+  // Who did what (screens show their current name)
+  ordersRung      Order[]
+  stockMovements  StockMovement[]
+  expenses        Expense[]
+  activity        ActivityEntry[]
 
   @@map("user")
 }
@@ -90,12 +98,256 @@ model RateLimit {
   @@map("rateLimit")
 }
 
-/// The login form's lock: tries per email (lowercased), counted before the password is checked.
-/// See features/auth/actions.ts and rate-limit.ts.
+/// The login form's lock: tries per account ("user:<id>"), or per typed email/username when
+/// no account matches, counted before the password is checked. See features/auth/actions.ts.
 model LoginAttempt {
-  email       String   @id
+  key         String   @id
   attempts    Int
   lastFailure DateTime
 
   @@map("loginAttempt")
+}
+
+// ── Shop ─────────────────────────────────────────────────────────────────────
+
+/// One row (id = 1): the business profile and receipt text from Settings.
+model Settings {
+  id            Int      @id @default(1)
+  shopName      String
+  contactNumber String   @default("")
+  address       String   @default("")
+  receiptFooter String   @default("")
+  updatedAt     DateTime @updatedAt
+
+  @@map("settings")
+}
+
+/// Menu categories from Settings → Product categories, in the owner's order.
+/// The id is a readable slug ("burgers", "iceCream"); "iceCream" is locked in code.
+model Category {
+  id       String    @id
+  label    String
+  position Int
+  products Product[]
+
+  @@map("category")
+}
+
+// ── Menu ─────────────────────────────────────────────────────────────────────
+
+/// Something on the POS. Money is whole centavos everywhere (₱149.00 = 14900).
+model Product {
+  id          String       @id @default(uuid())
+  name        String
+  description String       @default("")
+  /// Restrict: a category with products can't be deleted (the app already blocks it).
+  categoryId  String
+  category    Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  /// Selling price per order, in centavos.
+  price       Int
+  /// Pieces per order: 1, or 2 for Buy 1 Take 1. The recipe is per piece.
+  pieces      Int          @default(1)
+  /// Small resized photo as a data URL (up to about 500 KB), or null for the category icon.
+  image       String?
+  /// Switched on for sale by the owner. Sold out is worked out from stock, never stored.
+  available   Boolean      @default(true)
+  /// Set instead of deleting, so past orders and reports keep pointing at it.
+  archivedAt  DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  recipe      RecipeLine[]
+  orderLines  OrderLine[]
+
+  @@index([categoryId])
+  @@map("product")
+}
+
+// ── Inventory ────────────────────────────────────────────────────────────────
+
+/// pcs, or kg / L stored in g / ml. Every quantity column is in the small unit (pc, g, ml),
+/// as whole numbers, so repeated small deductions (15 g of lettuce) never drift.
+enum Unit {
+  pcs
+  kg
+  L
+}
+
+/// An ingredient or supply: bought (buns, sauce), made in the shop (patties) or resold (Dan Eric).
+model InventoryItem {
+  id         String          @id @default(uuid())
+  name       String
+  /// One of itemCategories in features/inventory/types.ts ("Produce", "Ice Cream (Dan Eric)").
+  /// Plain text, not an enum: the names have spaces and brackets, and zod checks them.
+  category   String
+  unit       Unit
+  /// On hand, in the small unit. Kept in step with the StockMovement ledger.
+  quantity   Int             @default(0)
+  /// Reorder point, in the small unit.
+  minimum    Int             @default(0)
+  /// Centavos per big unit (per kg, per L, per pc) from the latest Stock In; 0 = no cost yet.
+  unitCost   Int             @default(0)
+  /// How much one pack holds, in the small unit (10 pcs, 1000 g). Null = not bought by the pack.
+  packSize   Int?
+  /// Made in the shop, so Stock In records a batch made rather than a purchase.
+  homemade   Boolean         @default(false)
+  archivedAt DateTime?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  usedIn     RecipeLine[]
+  movements  StockMovement[]
+
+  @@map("inventoryItem")
+}
+
+/// How much of one item a single piece of a product uses. One row per product + item.
+model RecipeLine {
+  /// Cascade: removing a product removes its recipe.
+  productId String
+  product   Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// Restrict: an item that's in a recipe can't be deleted out from under it.
+  itemId    String
+  item      InventoryItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  /// In the item's small unit, per piece.
+  quantity  Int
+
+  @@id([productId, itemId])
+  @@index([itemId])
+  @@map("recipeLine")
+}
+
+enum MovementType {
+  stock_in   @map("stock-in")
+  adjustment
+  waste
+  sale
+}
+
+/// The stock ledger: every change to an item's quantity, never edited or deleted.
+model StockMovement {
+  id           String        @id @default(uuid())
+  itemId       String
+  item         InventoryItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  type         MovementType
+  /// Signed, in the small unit: +5000 for 5 kg in, -15 for 15 g sold.
+  change       Int
+  /// Stock In only: centavos per big unit, worked out from the total paid.
+  unitCost     Int?
+  /// Stock In: receipt number, if any.
+  reference    String?
+  /// Stock In: where it was bought or made ("Palengke", "Shopee", "Made in-house", "Dan Eric").
+  supplier     String?
+  /// Adjustment / waste reason.
+  note         String?
+  /// Sale only: the order that used it (was the order number in a text field).
+  orderId      String?
+  order        Order?        @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  /// The day it moved (the day received, for Stock In).
+  date         DateTime      @db.Date
+  recordedById String
+  recordedBy   User          @relation(fields: [recordedById], references: [id], onDelete: Restrict)
+  createdAt    DateTime      @default(now())
+
+  @@index([itemId, createdAt])
+  @@index([orderId])
+  @@map("stockMovement")
+}
+
+// ── Sales ────────────────────────────────────────────────────────────────────
+
+enum PaymentMethod {
+  cash
+  gcash
+}
+
+/// A completed sale. Never edited: its lines keep the price and cost of that moment.
+model Order {
+  id             String          @id @default(uuid())
+  /// Shown as "#1001". The migration starts the sequence at 1001.
+  number         Int             @unique @default(autoincrement())
+  completedAt    DateTime        @default(now())
+  /// The Manila calendar day, for "today" and daily reports without time-zone maths.
+  date           DateTime        @db.Date
+  cashierId      String
+  cashier        User            @relation(fields: [cashierId], references: [id], onDelete: Restrict)
+  method         PaymentMethod
+  /// Cash handed over, in centavos (the total, for GCash). Change = received - total.
+  amountReceived Int
+  lines          OrderLine[]
+  stockMovements StockMovement[]
+
+  @@index([date])
+  @@map("order")
+}
+
+/// One product on an order, with snapshots so later price, recipe or name changes never
+/// rewrite past revenue and profit.
+model OrderLine {
+  id         String  @id @default(uuid())
+  orderId    String
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  /// Snapshots at the time of sale.
+  name       String
+  categoryId String
+  quantity   Int
+  /// Centavos per order, as charged.
+  unitPrice  Int
+  /// Centavos per order (recipe × pieces, or the dealer price), at the time of sale.
+  unitCost   Int
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("orderLine")
+}
+
+// ── Expenses ─────────────────────────────────────────────────────────────────
+
+enum ExpenseBusiness {
+  burger
+  iceCream
+  shared
+}
+
+/// Operating costs only (electricity, LPG, packaging…). Ingredients are Stock In, not expenses.
+model Expense {
+  id           String          @id @default(uuid())
+  /// The day it was paid.
+  date         DateTime        @db.Date
+  /// One of expenseCategories in features/expenses/types.ts ("LPG / Cooking gas", …).
+  category     String
+  /// Shared = one bill for both businesses; only counted under "All".
+  business     ExpenseBusiness
+  description  String
+  /// Centavos.
+  amount       Int
+  paidVia      PaymentMethod
+  recordedById String
+  recordedBy   User            @relation(fields: [recordedById], references: [id], onDelete: Restrict)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([date])
+  @@map("expense")
+}
+
+// ── Activity ─────────────────────────────────────────────────────────────────
+
+/// One important change: who, when, what. Never edited or deleted (owner-only page).
+model ActivityEntry {
+  id     String   @id @default(uuid())
+  at     DateTime @default(now())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  /// One of activityModules in features/activity/types.ts ("POS", "Inventory", …).
+  module String
+  /// What happened, e.g. "Price updated".
+  action String
+  /// What it happened to, e.g. "Double Cheeseburger" or "Order #1043".
+  record String
+  /// Before → after, or a short detail.
+  change String?
+
+  @@index([at])
+  @@map("activityEntry")
 }

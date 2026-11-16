@@ -11,48 +11,53 @@ import { lockedForMinutes, LOGIN_WINDOW_MS } from "./rate-limit";
 import { changePasswordSchema, loginSchema, type ChangePasswordState, type LoginFormState } from "./schemas";
 
 export async function login(_prev: LoginFormState, formData: FormData): Promise<LoginFormState> {
-  const email = formData.get("email");
-  const result = loginSchema.safeParse({ email, password: formData.get("password") });
-  const typed = typeof email === "string" ? email : "";
+  const raw = formData.get("identifier");
+  const result = loginSchema.safeParse({ identifier: raw, password: formData.get("password") });
+  const typed = typeof raw === "string" ? raw : "";
 
   if (!result.success) {
-    return { email: typed, errors: z.flattenError(result.error).fieldErrors };
+    return { identifier: typed, errors: z.flattenError(result.error).fieldErrors };
   }
+  const { identifier: id, password } = result.data;
 
   // Calling auth.api directly skips Better Auth's own rate limiter (that one only guards the
-  // /api/auth HTTP routes), so the form limits tries per email itself. Per email, not per IP:
-  // it stops password guessing even from many addresses, at the cost that someone who knows
-  // an email can keep it locked by guessing. Fine for a family shop; the owner can still wait it out.
-  const key = result.data.email.toLowerCase();
+  // /api/auth HTTP routes), so the form limits tries itself. Per account — the same 5 tries
+  // whether you type the email or the username — not per IP: it stops password guessing even
+  // from many addresses, at the cost that someone who knows a login can keep it locked by
+  // guessing. Fine for a family shop; the owner can still wait it out.
+  const account = await db.user.findFirst({ where: id.by === "email" ? { email: id.email } : { username: id.username }, select: { id: true } });
+  const key = account ? `user:${account.id}` : `${id.by}:${id.by === "email" ? id.email : id.username}`;
   const now = new Date();
-  await db.loginAttempt.deleteMany({ where: { email: key, lastFailure: { lt: new Date(now.getTime() - LOGIN_WINDOW_MS) } } });
+  await db.loginAttempt.deleteMany({ where: { key, lastFailure: { lt: new Date(now.getTime() - LOGIN_WINDOW_MS) } } });
   // Counted before the password is checked, in one atomic upsert, so parallel requests
   // can't all read "4 tries" and slip past the limit together.
   const tries = await db.loginAttempt.upsert({
-    where: { email: key },
-    create: { email: key, attempts: 1, lastFailure: now },
+    where: { key },
+    create: { key, attempts: 1, lastFailure: now },
     update: { attempts: { increment: 1 } },
   });
   const wait = lockedForMinutes({ attempts: tries.attempts, lastFailure: tries.lastFailure.getTime() }, now.getTime());
-  if (wait) return { email: typed, error: `Too many wrong passwords. Try again in ${wait} minute${wait === 1 ? "" : "s"}.` };
+  if (wait) return { identifier: typed, error: `Too many wrong passwords. Try again in ${wait} minute${wait === 1 ? "" : "s"}.` };
 
   try {
     // Checks the password hash and sets the session cookie (via the nextCookies plugin).
-    await auth.api.signInEmail({ body: result.data, headers: await headers() });
+    const request = { headers: await headers() };
+    if (id.by === "email") await auth.api.signInEmail({ body: { email: id.email, password }, ...request });
+    else await auth.api.signInUsername({ body: { username: id.username, password }, ...request });
   } catch (error) {
     if (!(error instanceof APIError)) throw error;
-    if (error.body?.code === ACCOUNT_DEACTIVATED) return { email: typed, error: error.body.message };
+    if (error.body?.code === ACCOUNT_DEACTIVATED) return { identifier: typed, error: error.body.message };
     if (error.status !== "UNAUTHORIZED") {
       // Not their mistake (rate limited, server trouble), so it doesn't count as a try.
-      await db.loginAttempt.update({ where: { email: key }, data: { attempts: { decrement: 1 } } });
-      return { email: typed, error: "Couldn't sign in right now. Try again in a moment." };
+      await db.loginAttempt.update({ where: { key }, data: { attempts: { decrement: 1 } } });
+      return { identifier: typed, error: "Couldn't sign in right now. Try again in a moment." };
     }
-    await db.loginAttempt.update({ where: { email: key }, data: { lastFailure: now } });
-    // Same message for a wrong email or a wrong password, so it doesn't reveal which accounts exist.
-    return { email: typed, error: "Wrong email or password." };
+    await db.loginAttempt.update({ where: { key }, data: { lastFailure: now } });
+    // One message for every wrong detail, so it doesn't reveal which accounts exist.
+    return { identifier: typed, error: "Wrong email, username or password." };
   }
 
-  await db.loginAttempt.deleteMany({ where: { email: key } });
+  await db.loginAttempt.deleteMany({ where: { key } });
   redirect("/dashboard");
 }
 

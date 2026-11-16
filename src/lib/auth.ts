@@ -4,6 +4,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
+import { username } from "better-auth/plugins";
 
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -51,6 +52,11 @@ export const auth = betterAuth({
       },
     },
   },
-  // Lets server actions (sign in / sign out) set the session cookie. Must stay last.
-  plugins: [nextCookies()],
+  plugins: [
+    // Sign in with a username as well as an email. Defaults: 3-30 letters, numbers, _ and .,
+    // matched ignoring capitals (features/users/schemas.ts uses the same rules).
+    username(),
+    // Lets server actions (sign in / sign out) set the session cookie. Must stay last.
+    nextCookies(),
+  ],
 });

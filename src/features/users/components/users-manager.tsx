@@ -28,7 +28,7 @@ export function UsersManager({ users, currentUserId }: { users: User[]; currentU
   const [saving, startSave] = useTransition();
 
   const q = query.trim().toLowerCase();
-  const rows = users.filter((u) => `${u.name} ${u.email} ${u.role}`.toLowerCase().includes(q));
+  const rows = users.filter((u) => `${u.name} ${u.email} ${u.username ?? ""} ${u.role}`.toLowerCase().includes(q));
 
   function toggle(user: User) {
     // Deactivating asks once more; reactivating doesn't need to.
@@ -100,7 +100,10 @@ export function UsersManager({ users, currentUserId }: { users: User[]; currentU
                         {u.name}
                         {u.id === currentUserId && <span className="ml-1.5 text-xs font-normal text-muted-foreground">(you)</span>}
                       </p>
-                      <p className="truncate text-xs text-muted-foreground">{u.email}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {u.username && <span className="font-medium text-foreground">@{u.username} · </span>}
+                        {u.email}
+                      </p>
                     </div>
                   </div>
                 </TableCell>
@@ -168,6 +171,19 @@ function UserDialog({ user, isSelf, onClose }: { user: User | null; isSelf: bool
           </Field>
           <Field label="Email" htmlFor="user-email" error={errors.email?.[0]}>
             <Input id="user-email" name="email" type="email" defaultValue={user?.email} required className="h-10" />
+          </Field>
+          <Field label="Username (optional)" htmlFor="user-username" error={errors.username?.[0]}>
+            <Input
+              id="user-username"
+              name="username"
+              defaultValue={user?.username ?? ""}
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              maxLength={30}
+              placeholder="e.g. carlo — a shorter way to sign in"
+              className="h-10"
+            />
           </Field>
           <Field label="Role" htmlFor="user-role" error={errors.role?.[0]}>
             {isSelf ? (

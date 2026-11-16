@@ -16,8 +16,8 @@ import { auth } from "@/lib/auth";
 export const getCurrentUser = cache(async (): Promise<User & { firstName: string }> => {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session || !session.user.active) redirect("/login");
-  const { id, name, email, role, active } = session.user;
-  return { id, name, email, role: parseRole(role), active, firstName: name.split(" ")[0] };
+  const { id, name, email, role, active, username, displayUsername } = session.user;
+  return { id, name, email, username: displayUsername ?? username ?? null, role: parseRole(role), active, firstName: name.split(" ")[0] };
 });
 
 /** Any active account (owner or family member) can use every page except Users & Settings. */
