@@ -1,17 +1,23 @@
 import "server-only";
 
-import { connection } from "next/server";
+import { cache } from "react";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-import { userStore } from "@/features/users/store";
-import type { User } from "@/features/users/types";
+import type { Role, User } from "@/features/users/types";
+import { auth } from "@/lib/auth";
 
-// shortcut: there are no sessions yet, so everyone is the first active administrator.
-// Read the user from the Better Auth session once login is real.
-export async function getCurrentUser(): Promise<User & { firstName: string }> {
-  await connection(); // read at request time: accounts can change while the app runs
-  const user = userStore.list().find((u) => u.active && u.role === "Administrator")!;
-  return { ...user, firstName: user.name.split(" ")[0] };
-}
+/**
+ * The signed-in user, from the Better Auth session cookie. Every page and action goes
+ * through here, so no session (or a deactivated account) always ends at /login.
+ * cache() runs it once per page render; server actions call it fresh each time.
+ */
+export const getCurrentUser = cache(async (): Promise<User & { firstName: string }> => {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || !session.user.active) redirect("/login");
+  const { id, name, email, role, active } = session.user;
+  return { id, name, email, role: role as Role, active, firstName: name.split(" ")[0] };
+});
 
 /**
  * Any active account (owner or family member) can use every page except Users & Settings.

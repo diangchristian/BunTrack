@@ -1,22 +1,27 @@
 # BunTrack
 
 Burger shop management system built with Next.js (App Router), TypeScript,
-Tailwind CSS, shadcn/ui (Base UI), PostgreSQL and Prisma.
+Tailwind CSS, shadcn/ui (Base UI), PostgreSQL (Neon) and Prisma.
 
 ## Prerequisites
 
 - Node.js 20.9 or later
 - npm
-- A PostgreSQL database
+- The Neon CLI (`npm i -g neon`), signed in with `neon login`
 
 ## Setup
 
 ```bash
 npm install                 # also runs prisma generate
-cp .env.example .env        # then set DATABASE_URL
-npm run db:migrate          # apply migrations
-npm run dev                 # http://localhost:3000
+cp .env.example .env        # then set BETTER_AUTH_SECRET and SEED_ADMIN_PASSWORD
+neon env pull               # Neon DATABASE_URL (pooled) + DATABASE_URL_UNPOOLED (direct)
+npx prisma migrate deploy   # apply migrations (npm run db:migrate to create new ones)
+npm run db:seed             # create the first administrator from SEED_ADMIN_*
+npm run dev                 # http://localhost:3000, sign in as SEED_ADMIN_EMAIL
 ```
+
+Sign-in is Better Auth with email and password (`src/lib/auth.ts`). Public sign-up is
+off: accounts are created on the server, starting with the seeded administrator.
 
 ## Scripts
 
@@ -35,8 +40,9 @@ npm run dev                 # http://localhost:3000
 ## Project structure
 
 ```
-prisma/              schema.prisma (no models yet) and seed.ts
-prisma7.config.ts    Prisma 7 config: schema path, migrations, DATABASE_URL
+prisma/              schema.prisma (auth tables), migrations/, seed.ts (first admin)
+prisma7.config.ts    Prisma 7 config: schema path, migrations, DATABASE_URL_UNPOOLED
+neon.ts              Neon project policy (services, branch TTLs); `neon deploy` applies it
 src/app/             Routing and composition only
   login/             Sign-in page
   (app)/             Signed-in shell (sidebar + top bar); dashboard/
@@ -44,7 +50,7 @@ src/features/        One folder per feature, see src/features/README.md
 src/components/ui/   shadcn components (add more with `npx shadcn@latest add <name>`)
 src/components/layout/  App sidebar, top bar, logo
 src/hooks/           Shared client-side hooks
-src/lib/             db.ts (Prisma client), env.ts (validated env), utils.ts (cn), format.ts (₱)
+src/lib/             auth.ts (Better Auth), db.ts (Prisma client on the Neon driver), env.ts (validated env), utils.ts (cn), format.ts (₱)
 src/proxy.ts         Pass-through request proxy (Next.js 16 replacement for middleware)
 src/generated/prisma Generated Prisma client (gitignored)
 ```

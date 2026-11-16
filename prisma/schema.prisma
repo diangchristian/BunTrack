@@ -1,12 +1,80 @@
 // Prisma schema: https://pris.ly/d/prisma-schema
-// Models are added per feature. There are none yet.
+// Models are added per feature.
 
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
 }
 
-// The connection URL (DATABASE_URL) is set in prisma7.config.ts (Prisma 7).
+// The CLI connection URL (DATABASE_URL_UNPOOLED) is set in prisma7.config.ts (Prisma 7).
 datasource db {
   provider = "postgresql"
+}
+
+// ── Auth (Better Auth core tables, see src/lib/auth.ts) ──────────────────────
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  // BunTrack fields: "Administrator" or "Family member" (features/users/types.ts)
+  role          String    @default("Family member")
+  active        Boolean   @default(true)
+  sessions      Session[]
+  accounts      Account[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+/// One sign-in method for a user. Email + password is providerId "credential",
+/// and the password hash lives here, not on User.
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }

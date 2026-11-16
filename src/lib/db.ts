@@ -1,13 +1,14 @@
 import "server-only";
 
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaNeon } from "@prisma/adapter-neon";
 
 import { PrismaClient } from "@/generated/prisma/client";
 import { env } from "@/lib/env";
 
 const createPrismaClient = () =>
   new PrismaClient({
-    adapter: new PrismaPg({ connectionString: env.DATABASE_URL }),
+    // Neon serverless driver (WebSockets) on the pooled DATABASE_URL, as Neon recommends for Prisma.
+    adapter: new PrismaNeon({ connectionString: env.DATABASE_URL }),
   });
 
 // Reuse one client across hot reloads in development.

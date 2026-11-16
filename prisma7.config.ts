@@ -9,7 +9,8 @@ export default defineConfig({
     path: "prisma/migrations",
     seed: "tsx prisma/seed.ts",
   },
+  // The CLI (migrate, studio) needs Neon's direct connection; the app uses the pooled DATABASE_URL.
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: process.env["DATABASE_URL_UNPOOLED"],
   },
 });

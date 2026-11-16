@@ -56,6 +56,12 @@ export function LoginForm() {
         )}
       </div>
 
+      {state.error && (
+        <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive">
+          {state.error}
+        </p>
+      )}
+
       <Button type="submit" disabled={pending} className="h-11 text-sm font-semibold">
         {pending ? "Signing in…" : "Sign in"}
       </Button>

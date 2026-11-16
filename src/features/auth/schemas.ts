@@ -7,5 +7,7 @@ export const loginSchema = z.object({
 
 export type LoginFormState = {
   email?: string;
+  /** Wrong credentials or a deactivated account: not tied to one field. */
+  error?: string;
   errors?: { email?: string[]; password?: string[] };
 };

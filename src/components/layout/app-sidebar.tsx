@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { Logo } from "@/components/layout/logo";
+import { logout } from "@/features/auth/actions";
 import {
   Sidebar,
   SidebarContent,
@@ -121,13 +122,17 @@ export function AppSidebar({ user }: { user: { name: string; role: string } }) {
             <p className="truncate text-sm font-semibold text-foreground">{user.name}</p>
             <p className="truncate text-xs text-muted-foreground">{user.role}</p>
           </div>
-          <Link
-            href="/login"
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-background hover:text-foreground"
-          >
-            <LogOut className="size-4" aria-hidden />
-            <span className="sr-only">Log out</span>
-          </Link>
+          {/* A form, not a link: signing out changes state, so it must be a POST. */}
+          <form action={logout}>
+            <button
+              type="submit"
+              title="Log out"
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-background hover:text-foreground"
+            >
+              <LogOut className="size-4" aria-hidden />
+              <span className="sr-only">Log out</span>
+            </button>
+          </form>
         </div>
       </SidebarFooter>
       <SidebarRail />
