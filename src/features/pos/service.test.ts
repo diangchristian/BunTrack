@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { test } from "vitest";
 
 import { checkoutOrder, piecesToDeduct, toMenuProduct, toReceipt } from "./service";
 import type { MenuProduct } from "./types";

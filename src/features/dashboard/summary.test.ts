@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { test } from "vitest";
 
 import { lowStockRows, monthlyChart, recentTransactionRows, sixMonths, summarizeWeek, todayAndYesterday, unavailableRows, type DashboardOrder } from "./summary";
 

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { test } from "vitest";
 
 import { lockedForMinutes, LOGIN_WINDOW_MS } from "./rate-limit";
 

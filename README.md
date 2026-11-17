@@ -33,7 +33,7 @@ The login form allows 5 tries per account (email and username count together), t
 | `npm run build` | Production build |
 | `npm run start` | Serve the production build |
 | `npm run lint` | Run ESLint |
-| `npm test` | Run `*.test.ts` files with Node's test runner (via tsx) |
+| `npm test` | Run `*.test.ts` files with Vitest |
 | `npm run db:generate` | Generate the Prisma client |
 | `npm run db:migrate` | Create and apply migrations (`prisma migrate dev`) |
 | `npm run db:studio` | Open Prisma Studio |

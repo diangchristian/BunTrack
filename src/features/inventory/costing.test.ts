@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { test } from "vitest";
 
 import { costFromPurchase, formatQuantity, recipeCost, roundForMenu, servingsLeft, stockStatus, suggestedPrice } from "./costing";
 import type { InventoryItem } from "./types";
