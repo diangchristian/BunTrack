@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
 
 import { NoAccess } from "@/components/no-access";
 import { canAdminister } from "@/features/auth/queries";
 import { ActivityLog } from "@/features/activity/components/activity-log";
-import { activityStore } from "@/features/activity/store";
+import { listActivity } from "@/features/activity/queries";
 
 export const metadata: Metadata = { title: "Activity Logs" };
 
@@ -12,7 +11,7 @@ export default async function ActivityPage() {
   // Owner only: family members' changes are recorded here, so they don't see or browse it.
   if (!(await canAdminister())) return <NoAccess page="Activity Logs" />;
 
-  await connection(); // always the latest entries
+  const entries = await listActivity();
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-8">
@@ -21,8 +20,7 @@ export default async function ActivityPage() {
         <p className="text-sm text-muted-foreground">Every important change: who did it, when, and what changed. Entries can&apos;t be edited or deleted.</p>
       </div>
       <section className="rounded-xl border bg-card p-5 shadow-[0_2px_8px_rgb(31_26_23/0.06)]">
-        {/* shortcut: newest 500 only; filter on the server with pagination once the log is in the database. */}
-        <ActivityLog entries={activityStore.list().slice(0, 500)} />
+        <ActivityLog entries={entries} />
       </section>
     </div>
   );

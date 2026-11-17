@@ -18,7 +18,7 @@ import { EmptyNote } from "@/components/empty-note";
 import { StatCard } from "@/components/stat-card";
 import { vsPrevious } from "@/features/dashboard/delta";
 import { getDashboardData } from "@/features/dashboard/queries";
-import { settingsStore } from "@/features/settings/store";
+import { getSettings } from "@/features/settings/queries";
 import { formatPeso } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +27,7 @@ export const metadata: Metadata = { title: "Dashboard" };
 export default async function DashboardPage() {
   if (!(await canUseStore())) return <NoAccess page="The dashboard" />;
 
-  const [user, data] = await Promise.all([getCurrentUser(), getDashboardData()]);
+  const [user, data, shop] = await Promise.all([getCurrentUser(), getDashboardData(), getSettings()]);
   const { today, yesterday } = data;
   const outOfStock = data.lowStock.filter((item) => item.outOfStock).length;
 
@@ -37,7 +37,7 @@ export default async function DashboardPage() {
         <div>
           <h1 className="text-[22px] leading-[30px] font-bold">Welcome back, {user.firstName}</h1>
           <p className="text-sm text-muted-foreground">
-            Here&apos;s how {settingsStore.get().shopName} is doing today.
+            Here&apos;s how {shop.shopName} is doing today.
           </p>
         </div>
         <Link href="/pos" className={cn(buttonVariants(), "h-10 px-4")}>

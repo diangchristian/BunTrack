@@ -36,6 +36,4 @@ export type Expense = {
   amount: number;
   paidVia: "cash" | "gcash";
   recordedBy: string;
-  /** Seeded demo data, not a real expense. */
-  sample?: boolean;
 };

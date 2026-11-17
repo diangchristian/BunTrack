@@ -31,7 +31,7 @@ export const productFormSchema = z
   b1t1: z.literal("on").nullish(),
   /**
    * The photo as a data URL (resized in the browser to ~512px), or "" to remove it.
-   * shortcut: stored with the product in memory; move to file storage with the database.
+   * shortcut: stored in the product row (Postgres); move to file storage if photos make the menu slow to load.
    */
   image: z
     .string()

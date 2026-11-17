@@ -6,9 +6,10 @@ import { z } from "zod";
 import { formText } from "@/lib/forms";
 import { logActivity } from "@/features/activity/log";
 import { canUseStore, getCurrentUser } from "@/features/auth/queries";
+import { toDbDate } from "@/lib/dates";
+import { db } from "@/lib/db";
 import { formatCentavos } from "@/lib/format";
 import { expenseFormSchema } from "./schemas";
-import { expenseStore } from "./store";
 
 export type ExpenseFormState = { ok?: boolean; error?: string; fieldErrors?: Record<string, string[] | undefined> };
 
@@ -21,14 +22,17 @@ export async function saveExpense(_prev: ExpenseFormState, formData: FormData): 
   );
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
 
+  const data = { ...parsed.data, date: toDbDate(parsed.data.date) };
   const id = formText(formData, "id");
   if (id) {
-    if (!expenseStore.update(id, parsed.data)) {
+    // Edits keep whoever recorded it first.
+    const { count } = await db.expense.updateMany({ where: { id }, data });
+    if (count === 0) {
       refresh(); // someone else deleted it; drop the stale row
       return { error: "This expense no longer exists." };
     }
   } else {
-    expenseStore.add(parsed.data, (await getCurrentUser()).name);
+    await db.expense.create({ data: { ...data, recordedById: (await getCurrentUser()).id } });
   }
   await logActivity({
     module: "Expenses",
@@ -42,8 +46,10 @@ export async function saveExpense(_prev: ExpenseFormState, formData: FormData): 
 
 export async function deleteExpense(id: string): Promise<ExpenseFormState> {
   if (!(await canUseStore())) return { error: "You don't have permission to delete expenses." };
-  const expense = expenseStore.list().find((e) => e.id === id);
-  if (!expense || !expenseStore.remove(id)) {
+  // deleteMany doesn't throw when another device deleted it first.
+  const expense = await db.expense.findUnique({ where: { id }, select: { description: true, category: true, amount: true } });
+  const { count } = await db.expense.deleteMany({ where: { id } });
+  if (!expense || count === 0) {
     refresh(); // already deleted elsewhere; drop the stale row
     return { error: "This expense no longer exists." };
   }

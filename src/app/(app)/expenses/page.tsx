@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CalendarDays, Coins, Info, Receipt, Tags, TrendingDown, TrendingUp } from "lucide-react";
+import { CalendarDays, Coins, Receipt, Tags, TrendingDown, TrendingUp } from "lucide-react";
 
 import { NoAccess } from "@/components/no-access";
 import { canUseStore } from "@/features/auth/queries";
@@ -22,7 +22,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/expense
   if (!(await canUseStore())) return <NoAccess page="Expenses" />;
 
   const { period, business } = parseReportParams(await searchParams);
-  const { range, summary, revenue, costOfGoodsSold, includesSample } = await getExpensesPage(period, business);
+  const { range, summary, revenue, costOfGoodsSold } = await getExpensesPage(period, business);
   const net = revenue - costOfGoodsSold - summary.total;
   const largest = summary.byCategory[0];
   const prevLabel = range.prevFrom === range.prevTo ? shortDate(range.prevFrom) : `${shortDate(range.prevFrom)}–${shortDate(range.prevTo)}`;
@@ -45,13 +45,6 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/expense
           {range.from === range.to ? shortDate(range.from) : `${shortDate(range.from)} – ${shortDate(range.to)}`}
         </span>
       </div>
-
-      {includesSample && (
-        <p className="flex items-center gap-2 rounded-[10px] bg-secondary px-3 py-2 text-xs text-muted-foreground">
-          <Info className="size-4 shrink-0" aria-hidden />
-          Includes sample expenses so this page has data to show. Edit or delete them freely; everything resets when the server restarts until the database is connected.
-        </p>
-      )}
 
       <section aria-label="Expense summary" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
