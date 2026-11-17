@@ -16,7 +16,7 @@ import { recordStockMovement, type InventoryFormState } from "../actions";
 import { formatQuantity, perUnitLabel, stockStatus } from "../costing";
 import { parsePesos } from "@/features/products/schemas";
 import { previewStockIn, stockAmount } from "../schemas";
-import { units, type InventoryItem, type MovementType } from "../types";
+import { DAN_ERIC, units, type InventoryItem, type MovementType } from "../types";
 
 type FormType = Exclude<MovementType, "sale">;
 const types: { id: FormType; label: string }[] = [
@@ -86,7 +86,7 @@ function MovementForm({
 
   // Dan Eric sells at a fixed dealer's price per piece, so Stock In asks for that (prefilled
   // with the current one) and works out the total, like the Purchase Tracker sheet.
-  const dealer = type === "stock-in" && item?.category === "Ice Cream (Dan Eric)";
+  const dealer = type === "stock-in" && item?.category === DAN_ERIC;
   const [dealerPriceInput, setDealerPrice] = useState<string>();
   const dealerPrice = dealerPriceInput ?? (item?.unitCost ? (item.unitCost / 100).toFixed(2) : "");
   const pieces = item ? stockAmount(quantity, item.unit) : null;
@@ -165,7 +165,7 @@ function MovementForm({
             name="supplier"
             key={item?.id}
             // Each item is usually bought from the same place, so start with the last one.
-            defaultValue={(item && lastPlace[item.id]) ?? (item?.category === "Ice Cream (Dan Eric)" ? "Dan Eric" : "")}
+            defaultValue={(item && lastPlace[item.id]) ?? (item?.category === DAN_ERIC ? "Dan Eric" : "")}
             placeholder="e.g. Palengke, Shopee, Made in-house"
             list="places"
             className="h-10"

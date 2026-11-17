@@ -14,10 +14,11 @@ import { cn } from "@/lib/utils";
 import { addInventoryItem, updateInventoryItem, type InventoryFormState } from "../actions";
 import { formatQuantity, perUnitLabel } from "../costing";
 import { parsePackSize, previewStockIn } from "../schemas";
-import { itemCategories, units, type InventoryItem, type UnitId } from "../types";
+import { DAN_ERIC, itemCategories, units, type InventoryItem, type UnitId } from "../types";
 import { Field } from "./movement-dialog";
 
-const categoryItems = itemCategories.map((c) => ({ value: c, label: c }));
+// Dan Eric stock is made from Products, so it isn't a choice here (a Dan Eric item keeps it, fixed).
+const categoryItems = itemCategories.filter((c) => c !== DAN_ERIC).map((c) => ({ value: c, label: c }));
 const measures: { unit: UnitId; label: string; hint: string; icon: LucideIcon }[] = [
   { unit: "pcs", label: "Counted", hint: "pieces · hotdogs, buns, cups", icon: Hash },
   { unit: "kg", label: "Weighed", hint: "kg · fries, onions, ground meat", icon: Scale },
@@ -78,18 +79,27 @@ function AddItemForm({ item, onDone }: { item?: InventoryItem; onDone: () => voi
           <Input id="item-name" name="name" defaultValue={item?.name} maxLength={60} required placeholder="e.g. Burger Buns, Cups (16 oz)" className="h-10" />
         </Field>
         <Field label="Category" htmlFor="item-category" error={errors.category?.[0]}>
-          <Select name="category" items={categoryItems} defaultValue={item?.category ?? "Meat"}>
-            <SelectTrigger id="item-category" size="lg" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {categoryItems.map((c) => (
-                <SelectItem key={c.value} value={c.value}>
-                  {c.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {item?.category === DAN_ERIC ? (
+            <>
+              <input type="hidden" name="category" value={DAN_ERIC} />
+              <p id="item-category" className="flex h-10 items-center text-sm text-muted-foreground">
+                {DAN_ERIC} (stays: its product sells from it)
+              </p>
+            </>
+          ) : (
+            <Select name="category" items={categoryItems} defaultValue={item?.category ?? "Meat"}>
+              <SelectTrigger id="item-category" size="lg" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {categoryItems.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>
+                    {c.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </Field>
       </div>
 

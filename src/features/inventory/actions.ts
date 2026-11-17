@@ -12,12 +12,15 @@ import { formatQuantity } from "./costing";
 import { planMovement, type MovementInput } from "./movements";
 import { movementTypeToDb, toInventoryItem } from "./queries";
 import { itemFormSchema, movementFormSchema, openingStockIn } from "./schemas";
-import { units } from "./types";
+import { DAN_ERIC, units } from "./types";
 
 export type InventoryFormState = { ok?: boolean; error?: string; fieldErrors?: Record<string, string[] | undefined> };
 
 const CHANGED = "Someone just changed this item's stock. Check the amount and try again.";
 const NAME_TAKEN = "There's already an item called that.";
+// Dan Eric stock has one way in: creating the ice cream product, which makes and links its item.
+// Allowing it here too is how one tub ends up as two items with the stock split between them.
+const DAN_ERIC_FROM_PRODUCTS = "Dan Eric ice cream is added from Products (Ice Cream category), which makes its stock item.";
 
 /** Another active item with this name, ignoring capitals: one ingredient's stock would split across two rows. */
 const nameTaken = (name: string, exceptId?: string) =>
@@ -140,6 +143,7 @@ export async function addInventoryItem(_prev: InventoryFormState, formData: Form
     return { fieldErrors: { ...(parsed.success ? {} : z.flattenError(parsed.error).fieldErrors), ...openingErrors } };
   }
   const { minimum, packSize, homemade, ...values } = parsed.data;
+  if (values.category === DAN_ERIC) return { fieldErrors: { category: [DAN_ERIC_FROM_PRODUCTS] } };
   if (await nameTaken(values.name)) return { fieldErrors: { name: [NAME_TAKEN] } };
   const user = await getCurrentUser();
 
@@ -193,6 +197,10 @@ export async function updateInventoryItem(_prev: InventoryFormState, formData: F
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
 
   const { name, category, homemade } = parsed.data;
+  if ((before.category === DAN_ERIC) !== (category === DAN_ERIC)) {
+    const error = before.category === DAN_ERIC ? "A Dan Eric item stays in its category: its product sells from it." : DAN_ERIC_FROM_PRODUCTS;
+    return { fieldErrors: { category: [error] } };
+  }
   if (await nameTaken(name, before.id)) return { fieldErrors: { name: [NAME_TAKEN] } };
   const minimum = Math.round(parsed.data.minimum * units[before.unit].factor);
   const packSize = parsed.data.packSize ?? null;

@@ -6,7 +6,7 @@ import { connection } from "next/server";
 import type { MovementType as DbMovementType } from "@/generated/prisma/client";
 import { fromDbDate as asDay, orderLabel } from "@/lib/dates";
 import { db } from "@/lib/db";
-import type { InventoryItem, ItemCategory, MovementType, RecipeLine, StockMovement } from "./types";
+import { DAN_ERIC, type InventoryItem, type ItemCategory, type MovementType, type RecipeLine, type StockMovement } from "./types";
 
 // Prisma's enum names can't contain "-", so the database "stock-in" is `stock_in` in code.
 export const movementTypeToDb = { "stock-in": "stock_in", adjustment: "adjustment", waste: "waste", sale: "sale" } as const satisfies Record<
@@ -103,7 +103,7 @@ export async function getInventory() {
   for (const product of products) {
     const [line, ...more] = recipes[product.id] ?? [];
     const item = line && !more.length && line.quantity === 1 && items.find((i) => i.id === line.itemId);
-    if (item && item.category === "Ice Cream (Dan Eric)") sellsFor[item.id] = product.price;
+    if (item && item.category === DAN_ERIC) sellsFor[item.id] = product.price;
   }
 
   return { items, movements, usedBy, recipes, sellsFor };

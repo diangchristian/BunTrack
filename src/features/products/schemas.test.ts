@@ -61,3 +61,8 @@ test("an ice cream's dealer's price is optional: blank leaves its cost as it is"
   assert.equal(productFormSchema.parse(form).dealerPrice, undefined);
   assert.deepEqual(productFormSchema.safeParse({ ...form, dealerPrice: "abc" }).error?.issues.map((i) => i.message), ["Enter the dealer's price like 149 or 149.50"]);
 });
+
+test("a product's name is trimmed and repeated spaces collapse, so the duplicate check can't be dodged", () => {
+  const form = { name: "  Coke   Float  16oz ", description: "", category: "drinks", price: "79", available: "on", b1t1: null, image: "" };
+  assert.equal(productFormSchema.parse(form).name, "Coke Float 16oz");
+});

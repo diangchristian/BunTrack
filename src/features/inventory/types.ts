@@ -10,6 +10,9 @@ export const units = {
 
 export type UnitId = keyof typeof units;
 
+/** Dan Eric ice cream, resold as-is. Its stock items are made from Products (one per ice cream product). */
+export const DAN_ERIC = "Ice Cream (Dan Eric)";
+
 export const itemCategories = [
   "Bakery",
   "Meat",
@@ -19,7 +22,7 @@ export const itemCategories = [
   "Frozen",
   "Pantry",
   "Drinks",
-  "Ice Cream (Dan Eric)",
+  DAN_ERIC,
 ] as const;
 
 export type ItemCategory = (typeof itemCategories)[number];

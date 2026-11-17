@@ -21,7 +21,12 @@ export const priceSchema = pesos("a price").refine((v) => v > 0, { error: "Price
 
 export const productFormSchema = z
   .object({
-  name: z.string().trim().min(1, { error: "Enter a product name" }).max(60, { error: "Keep the name under 60 characters" }),
+  // Repeated spaces collapse, so "Coke  Float" can't slip past the duplicate-name check.
+  name: z
+    .string()
+    .trim()
+    .transform((s) => s.replace(/\s+/g, " "))
+    .pipe(z.string().min(1, { error: "Enter a product name" }).max(60, { error: "Keep the name under 60 characters" })),
   description: z.string().trim().max(120, { error: "Keep the description under 120 characters" }),
   // Checked against the current category list in the action (the list is editable in Settings).
   category: z.string().trim().min(1, { error: "Pick a category" }),

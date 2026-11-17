@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { logActivity } from "@/features/activity/log";
 import { ICE_CREAM } from "@/features/categories/types";
+import { DAN_ERIC } from "@/features/inventory/types";
 import { canUseStore } from "@/features/auth/queries";
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
@@ -12,7 +13,9 @@ import { formatCentavos } from "@/lib/format";
 import { priceSchema, productFormSchema } from "./schemas";
 
 const activeProduct = (id: string) => db.product.findFirst({ where: { id, archivedAt: null } });
-const DAN_ERIC = "Ice Cream (Dan Eric)";
+
+/** Thrown inside the save transaction (undoing it) when the ice cream's name already belongs to another kind of item. */
+class StockNameTaken extends Error {}
 
 /**
  * Dan Eric items are resold as-is, so an ice cream product needs its own stock item and a 1-unit
@@ -25,16 +28,14 @@ async function ensureDanEricStock(tx: Prisma.TransactionClient, product: { id: s
   const itemFields = { id: true, category: true, unitCost: true } as const;
   let item = (await tx.recipeLine.findFirst({ where: { productId: product.id }, select: { item: { select: itemFields } } }))?.item;
   if (!item) {
-    // Reuse a Dan Eric item that already has this name (added on the Inventory page first), so the
-    // same ice cream never ends up as two items with stock split between them. Only Dan Eric pieces:
-    // an "Ice" product must not start selling 1 g of the shop's Ice. Spaces collapse as item names do.
-    const name = product.name.trim().replace(/\s+/g, " ");
-    item =
-      (await tx.inventoryItem.findFirst({
-        where: { name: { equals: name, mode: "insensitive" }, category: DAN_ERIC, unit: "pcs", archivedAt: null },
-        select: itemFields,
-      })) ??
-      (await tx.inventoryItem.create({ data: { name: product.name, category: DAN_ERIC, unit: "pcs" }, select: itemFields }));
+    // Reuse a Dan Eric item with this name if one is left over without a product. Any other item
+    // with the name (e.g. "Ice" in Frozen) is a different thing: refuse rather than make a second
+    // "1 Liter" and split its stock, or start selling 1 g of the shop's Ice.
+    const sameName = await tx.inventoryItem.findFirst({ where: { name: { equals: product.name, mode: "insensitive" }, archivedAt: null }, select: { ...itemFields, unit: true } });
+    if (sameName && (sameName.category !== DAN_ERIC || sameName.unit !== "pcs")) {
+      throw new StockNameTaken(`There's already an inventory item called "${product.name}" (${sameName.category}). Rename one of them first.`);
+    }
+    item = sameName ?? (await tx.inventoryItem.create({ data: { name: product.name, category: DAN_ERIC, unit: "pcs" }, select: itemFields }));
     await tx.recipeLine.create({ data: { productId: product.id, itemId: item.id, quantity: 1 } });
   }
   // Only a Dan Eric item takes a dealer's price: a product moved into Ice Cream with a real recipe keeps its costs.
@@ -70,35 +71,50 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
 
   const { category, image, dealerPrice, ...values } = parsed.data;
   const data = { ...values, categoryId: category, image: image || null };
-  const id = formData.get("id");
-  if (typeof id === "string" && id) {
-    const found = await activeProduct(id);
-    if (!found) return { error: "This product no longer exists." };
-    const oldDealerPrice = await db.$transaction(async (tx) => ensureDanEricStock(tx, await tx.product.update({ where: { id }, data }), dealerPrice));
-    const before = { ...found, category: found.categoryId };
-    const changes = [
-      before.price !== parsed.data.price && `Price ${formatCentavos(before.price)} → ${formatCentavos(parsed.data.price)}`,
-      before.available !== parsed.data.available && (parsed.data.available ? "Switched on for sale" : "Switched off"),
-      before.name !== parsed.data.name && `Renamed from ${before.name}`,
-      before.category !== parsed.data.category && `Category ${before.category} → ${parsed.data.category}`,
-      before.pieces !== parsed.data.pieces && (parsed.data.pieces === 2 ? "Now Buy 1 Take 1" : "No longer Buy 1 Take 1"),
-      oldDealerPrice !== null && `Dealer's price ${formatCentavos(oldDealerPrice)} → ${formatCentavos(dealerPrice!)}`,
-    ].filter(Boolean);
-    await logActivity({
-      module: "Products",
-      action: before.price !== parsed.data.price ? "Price updated" : "Product updated",
-      record: parsed.data.name,
-      change: changes.join(" · ") || "Details edited",
-    });
-  } else {
-    // The product and its Dan Eric stock are saved together.
-    const created = await db.$transaction(async (tx) => {
-      const product = await tx.product.create({ data });
-      await ensureDanEricStock(tx, product, dealerPrice);
-      return product;
-    });
-    const dealer = created.categoryId === ICE_CREAM && dealerPrice !== undefined ? ` · dealer's price ${formatCentavos(dealerPrice)}` : "";
-    await logActivity({ module: "Products", action: "Product created", record: created.name, change: formatCentavos(created.price) + dealer });
+  const formId = formData.get("id");
+  const editing = typeof formId === "string" && formId ? formId : undefined;
+
+  // Two products with one name split sales and stock between them (and confuse the POS).
+  const sameName = await db.product.findFirst({
+    where: { name: { equals: values.name, mode: "insensitive" }, archivedAt: null, ...(editing && { id: { not: editing } }) },
+    select: { id: true },
+  });
+  if (sameName) return { fieldErrors: { name: ["There's already a product called that."] } };
+
+  try {
+    if (editing) {
+      const found = await activeProduct(editing);
+      if (!found) return { error: "This product no longer exists." };
+      const oldDealerPrice = await db.$transaction(async (tx) => ensureDanEricStock(tx, await tx.product.update({ where: { id: editing }, data }), dealerPrice));
+      const before = { ...found, category: found.categoryId };
+      const changes = [
+        before.price !== parsed.data.price && `Price ${formatCentavos(before.price)} → ${formatCentavos(parsed.data.price)}`,
+        before.available !== parsed.data.available && (parsed.data.available ? "Switched on for sale" : "Switched off"),
+        before.name !== parsed.data.name && `Renamed from ${before.name}`,
+        before.category !== parsed.data.category && `Category ${before.category} → ${parsed.data.category}`,
+        before.pieces !== parsed.data.pieces && (parsed.data.pieces === 2 ? "Now Buy 1 Take 1" : "No longer Buy 1 Take 1"),
+        oldDealerPrice !== null && `Dealer's price ${formatCentavos(oldDealerPrice)} → ${formatCentavos(dealerPrice!)}`,
+      ].filter(Boolean);
+      await logActivity({
+        module: "Products",
+        action: before.price !== parsed.data.price ? "Price updated" : "Product updated",
+        record: parsed.data.name,
+        change: changes.join(" · ") || "Details edited",
+      });
+    } else {
+      // The product and its Dan Eric stock are saved together.
+      const created = await db.$transaction(async (tx) => {
+        const product = await tx.product.create({ data });
+        await ensureDanEricStock(tx, product, dealerPrice);
+        return product;
+      });
+      const dealer = created.categoryId === ICE_CREAM && dealerPrice !== undefined ? ` · dealer's price ${formatCentavos(dealerPrice)}` : "";
+      await logActivity({ module: "Products", action: "Product created", record: created.name, change: formatCentavos(created.price) + dealer });
+    }
+  } catch (e) {
+    // The ice cream's name belongs to another kind of inventory item: nothing was saved.
+    if (e instanceof StockNameTaken) return { fieldErrors: { name: [e.message] } };
+    throw e;
   }
 
   refresh();
