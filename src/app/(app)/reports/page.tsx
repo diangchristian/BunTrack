@@ -72,7 +72,7 @@ async function ReportsContent({ searchParams }: PageProps<"/reports">) {
         />
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Card title="Revenue by day" description="Completed orders only">
           <RevenueChart data={report.byDay} />
         </Card>

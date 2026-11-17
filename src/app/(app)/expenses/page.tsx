@@ -113,7 +113,7 @@ async function ExpensesContent({ searchParams }: PageProps<"/expenses">) {
         )}
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section className="rounded-xl border bg-card p-5 shadow-[0_2px_8px_rgb(31_26_23/0.06)]">
           <ExpensesManager expenses={summary.list} />
         </section>

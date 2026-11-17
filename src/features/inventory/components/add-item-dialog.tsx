@@ -115,7 +115,7 @@ function AddItemForm({ item, onDone }: { item?: InventoryItem; onDone: () => voi
             How do you measure it?
           </span>
           <input type="hidden" name="unit" value={unit} />
-          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="measure-label">
+          <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-labelledby="measure-label">
             {measures.map((m) => (
               <button
                 key={m.unit}
@@ -158,7 +158,7 @@ function AddItemForm({ item, onDone }: { item?: InventoryItem; onDone: () => voi
                 type="button"
                 aria-pressed={byPack === o.id}
                 onClick={() => setByPack(o.id)}
-                className={cn("h-8 rounded-md text-sm font-medium text-muted-foreground", byPack === o.id && "bg-background font-semibold text-foreground shadow-sm")}
+                className={cn("min-h-8 rounded-md px-1 py-1 text-sm font-medium text-muted-foreground", byPack === o.id && "bg-background font-semibold text-foreground shadow-sm")}
               >
                 {o.label}
               </button>

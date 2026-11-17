@@ -46,7 +46,7 @@ export function CostingWorkbench({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
         <div className="flex flex-col gap-6">
           <section className="flex flex-wrap items-end gap-4 rounded-xl border bg-card p-5 shadow-[0_2px_8px_rgb(31_26_23/0.06)]">
             <div className="flex min-w-60 flex-1 flex-col gap-1.5">
