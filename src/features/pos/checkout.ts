@@ -3,7 +3,7 @@ import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import type { RecipeLine } from "@/features/inventory/types";
 import { ingredientsNeeded } from "@/features/inventory/movements";
-import { toDbDate as asDate } from "@/lib/dates";
+import { toDbDate } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { piecesToDeduct, toReceipt } from "./service";
 import type { PaymentMethod, Receipt } from "./types";
@@ -91,7 +91,7 @@ export async function saveSale(sale: Sale): Promise<SaveResult> {
         data: {
           clientRequestId: sale.clientRequestId,
           completedAt: sale.completedAt,
-          date: asDate(sale.date),
+          date: toDbDate(sale.date),
           cashierId: sale.cashierId,
           method: sale.method,
           amountReceived: sale.amountReceived,
@@ -106,7 +106,7 @@ export async function saveSale(sale: Sale): Promise<SaveResult> {
           type: "sale" as const,
           change: -amount,
           orderId: created.id,
-          date: asDate(sale.date),
+          date: toDbDate(sale.date),
           recordedById: sale.cashierId,
         })),
       });

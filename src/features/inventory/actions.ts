@@ -6,7 +6,7 @@ import { z } from "zod";
 import { formText } from "@/lib/forms";
 import { logActivity } from "@/features/activity/log";
 import { canAdminister, canUseStore, getCurrentUser } from "@/features/auth/queries";
-import { toDbDate as asDate } from "@/lib/dates";
+import { toDbDate } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { formatQuantity } from "./costing";
 import { planMovement, type MovementInput } from "./movements";
@@ -39,7 +39,7 @@ function movementRow(itemId: string, input: MovementInput, plan: Extract<ReturnT
     reference: plan.reference ?? null,
     supplier: plan.supplier ?? null,
     note: plan.note ?? null,
-    date: asDate(input.date),
+    date: toDbDate(input.date),
     recordedById,
   };
 }

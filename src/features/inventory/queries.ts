@@ -4,7 +4,7 @@ import { cache } from "react";
 import { connection } from "next/server";
 
 import type { MovementType as DbMovementType } from "@/generated/prisma/client";
-import { fromDbDate as asDay, orderLabel } from "@/lib/dates";
+import { fromDbDate, orderLabel } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { DAN_ERIC, type InventoryItem, type ItemCategory, type MovementType, type RecipeLine, type StockMovement } from "./types";
 
@@ -93,7 +93,7 @@ export async function getInventory() {
     ...((m.order || m.reference) && { reference: m.order ? orderLabel(m.order.number) : m.reference! }),
     ...(m.supplier && { supplier: m.supplier }),
     ...(m.note && { note: m.note }),
-    date: asDay(m.date),
+    date: fromDbDate(m.date),
     by: m.recordedBy.name,
     createdAt: m.createdAt.toISOString(),
   }));

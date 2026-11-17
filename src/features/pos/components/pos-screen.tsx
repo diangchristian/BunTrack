@@ -7,9 +7,8 @@ import { Button } from "@/components/ui/button";
 import { formatCentavos } from "@/lib/format";
 import type { Category } from "@/features/categories/types";
 import type { Settings } from "@/features/settings/schemas";
-import { orderTotals } from "../pricing";
 import type { MenuProduct, Receipt } from "../types";
-import { OrderPanel, type OrderLine } from "./order-panel";
+import { cartTotals, OrderPanel, type OrderLine } from "./order-panel";
 import { PaymentDialog } from "./payment-dialog";
 import { ProductGrid } from "./product-grid";
 import { ReceiptDialog } from "./receipt-dialog";
@@ -46,7 +45,7 @@ export function PosScreen({ menu, categories, cashierName, shop }: { menu: MenuP
     });
   }
 
-  const { itemCount, total } = orderTotals(lines.map((l) => ({ unitPrice: l.product.price, quantity: l.quantity })));
+  const { itemCount, total } = cartTotals(lines);
 
   function handlePaid(paid: Receipt) {
     toast.dismiss("order-cleared"); // an Undo after a sale would bring back an old order

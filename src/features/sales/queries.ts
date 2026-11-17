@@ -2,7 +2,7 @@ import "server-only";
 
 import { connection } from "next/server";
 
-import { fromDbDate, orderLabel, toDbDate as asDate } from "@/lib/dates";
+import { fromDbDate, orderLabel, toDbDate } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { manilaDate } from "@/lib/format";
 import { buildReport, periodRange, type Range } from "./report";
@@ -22,7 +22,7 @@ export function parseReportParams(params: { period?: string | string[]; business
  */
 export async function listOrders(range: Range): Promise<Order[]> {
   const rows = await db.order.findMany({
-    where: { date: { gte: asDate(range.prevFrom), lte: asDate(range.to) } },
+    where: { date: { gte: toDbDate(range.prevFrom), lte: toDbDate(range.to) } },
     select: {
       number: true,
       completedAt: true,

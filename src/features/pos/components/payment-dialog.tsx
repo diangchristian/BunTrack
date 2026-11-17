@@ -11,9 +11,9 @@ import { formatCentavos } from "@/lib/format";
 import { randomUuid } from "@/lib/uuid";
 import { cn } from "@/lib/utils";
 import { completeOrder } from "../actions";
-import { changeDue, orderTotals, quickCashOptions } from "../pricing";
+import { changeDue, quickCashOptions } from "../pricing";
 import type { PaymentMethod, Receipt } from "../types";
-import type { OrderLine } from "./order-panel";
+import { cartTotals, type OrderLine } from "./order-panel";
 
 const methods = [
   { id: "cash", label: "Cash", icon: Banknote },
@@ -58,7 +58,7 @@ function PaymentForm({
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
 
-  const { itemCount, total } = orderTotals(lines.map((l) => ({ unitPrice: l.product.price, quantity: l.quantity })));
+  const { itemCount, total } = cartTotals(lines);
   const received = Math.round(Number(cashInput) * 100) || 0;
   const short = method === "cash" && received < total;
 

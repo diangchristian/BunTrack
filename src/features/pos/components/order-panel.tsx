@@ -10,6 +10,9 @@ import { ProductImage } from "@/features/products/components/product-image";
 
 export type OrderLine = { product: MenuProduct; quantity: number };
 
+/** Item count and total of the cart, priced from the menu it was built from. */
+export const cartTotals = (lines: OrderLine[]) => orderTotals(lines.map((l) => ({ unitPrice: l.product.price, quantity: l.quantity })));
+
 export function OrderPanel({
   lines,
   onQuantityChange,
@@ -21,7 +24,7 @@ export function OrderPanel({
   onClear: () => void;
   onCharge: () => void;
 }) {
-  const { itemCount, total } = orderTotals(lines.map((l) => ({ unitPrice: l.product.price, quantity: l.quantity })));
+  const { itemCount, total } = cartTotals(lines);
 
   return (
     <section id="current-order" aria-label="Current order" className="flex min-h-0 scroll-mt-16 flex-col bg-card">

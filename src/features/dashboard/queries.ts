@@ -5,7 +5,7 @@ import { connection } from "next/server";
 import { canUseStore } from "@/features/auth/queries";
 import type { ItemCategory } from "@/features/inventory/types";
 import { addDays } from "@/features/sales/report";
-import { fromDbDate as asDay, toDbDate as asDate } from "@/lib/dates";
+import { fromDbDate, toDbDate } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { manilaDate } from "@/lib/format";
 import {
@@ -35,7 +35,7 @@ export async function getDashboardData() {
   const [weekOrders, recent, expenseDays, monthlySales, monthlyExpenses, categories, items, products] = await Promise.all([
     // This week's orders with just the line columns the totals need (~1,000 a week for one shop).
     db.order.findMany({
-      where: { date: { gte: asDate(addDays(today, -6)), lte: asDate(today) } },
+      where: { date: { gte: toDbDate(addDays(today, -6)), lte: toDbDate(today) } },
       select: { date: true, lines: { select: { name: true, categoryId: true, quantity: true, unitPrice: true, unitCost: true } } },
     }),
     db.order.findMany({
@@ -46,7 +46,7 @@ export async function getDashboardData() {
     // Today's and yesterday's operating expenses, added up by the database.
     db.expense.groupBy({
       by: ["date"],
-      where: { date: { gte: asDate(addDays(today, -1)), lte: asDate(today) } },
+      where: { date: { gte: toDbDate(addDays(today, -1)), lte: toDbDate(today) } },
       _sum: { amount: true },
     }),
     // Six months is too many orders to load just to add up, and Prisma's groupBy can't multiply
@@ -79,7 +79,7 @@ export async function getDashboardData() {
   // item is saved; a packSize of null means it isn't bought by the pack.
   const stock = items.map((i) => ({ ...i, category: i.category as ItemCategory, packSize: i.packSize ?? undefined }));
   const week = summarizeWeek(
-    weekOrders.map((o) => ({ date: asDay(o.date), lines: o.lines })),
+    weekOrders.map((o) => ({ date: fromDbDate(o.date), lines: o.lines })),
     today,
     categories,
   );
@@ -92,7 +92,7 @@ export async function getDashboardData() {
   return {
     ...todayAndYesterday(
       week,
-      expenseDays.map((e) => ({ date: asDay(e.date), amount: e._sum.amount ?? 0 })),
+      expenseDays.map((e) => ({ date: fromDbDate(e.date), amount: e._sum.amount ?? 0 })),
       today,
     ),
     salesTrend: week.salesTrend,
@@ -101,7 +101,7 @@ export async function getDashboardData() {
     revenueVsExpensesLabel: chart.label,
     bestSellers: week.bestSellers,
     recentTransactions: recentTransactionRows(
-      recent.map((o) => ({ ...o, date: asDay(o.date) })),
+      recent.map((o) => ({ ...o, date: fromDbDate(o.date) })),
       today,
     ),
     lowStock: lowStockRows(stock),
