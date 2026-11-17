@@ -171,8 +171,9 @@ function PaymentForm({
         </p>
       )}
 
-      <DialogFooter className="grid grid-cols-2 gap-2">
-        <Button type="button" variant="outline" className="h-11" onClick={onBack} disabled={pending}>
+      {/* Back only as wide as its word, so "Complete payment" gets the rest of a phone-width row. */}
+      <DialogFooter className="grid grid-cols-[auto_1fr] gap-2">
+        <Button type="button" variant="outline" className="h-11 px-5" onClick={onBack} disabled={pending}>
           Back
         </Button>
         <Button type="submit" variant="success" className="h-11 font-semibold" disabled={short || pending}>
