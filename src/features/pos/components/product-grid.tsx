@@ -85,7 +85,8 @@ export function ProductGrid({
               : "No products in this category yet."}
         </p>
       ) : (
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">
+        // At least 200px a card, and never more than 6 in a row: on wide screens the cards grow instead.
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(max(200px,calc((100%_-_5*0.75rem)/6)),1fr))] gap-3">
           {visible.map((product) => {
             const inCart = quantities.get(product.id) ?? 0;
             return (
@@ -96,7 +97,7 @@ export function ProductGrid({
                   onClick={() => onAdd(product.id)}
                   aria-label={`Add ${product.name}, ${formatCentavos(product.price)}${inCart ? `, ${inCart} in order` : ""}`}
                   className={cn(
-                    "relative flex h-full min-h-32 w-full flex-col gap-3 rounded-[14px] border bg-card p-4 text-left transition-shadow",
+                    "relative flex h-full w-full flex-col gap-3 rounded-[14px] border bg-card p-4 text-left transition-shadow",
                     "hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:hover:shadow-none",
                     inCart > 0 && "border-primary ring-1 ring-primary",
                   )}
@@ -106,9 +107,8 @@ export function ProductGrid({
                       {inCart}
                     </span>
                   )}
-                  {/* Only a real photo gets space; without one, the name is the tile (easier to scan at the counter). */}
-                  {product.image && <ProductImage product={product} sizes="240px" className={cn("h-32 w-full", !product.available && "opacity-60")} />}
-                  <span className={cn("pr-6 text-base leading-snug font-semibold", !product.available && "opacity-60")}>
+                  <ProductImage product={product} sizes="320px" className={cn("h-32 w-full", !product.available && "opacity-60")} />
+                  <span className={cn("text-base leading-snug font-semibold", !product.available && "opacity-60")}>
                     {product.name}
                     {product.pieces === 2 && (
                       <span className="ml-1.5 rounded-full bg-brand-soft px-1.5 py-0.5 align-middle text-xs font-bold text-brand-strong">B1T1</span>
