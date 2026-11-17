@@ -55,16 +55,15 @@ const orderForReceipt = { number: true, completedAt: true, method: true, amountR
  * - Rows are locked in item-id order, so two tills whose carts list shared ingredients in a
  *   different order wait for each other instead of deadlocking.
  */
-export async function saveSale(sale: Sale, recipes: Record<string, RecipeLine[]>): Promise<SaveResult> {
+export async function saveSale(sale: Sale): Promise<SaveResult> {
+  // A retry of a sale already saved: return it without touching the order sequence (a refused
+  // insert would still use up a number and leave a gap in the receipts).
   const existing = await db.order.findUnique({ where: { clientRequestId: sale.clientRequestId }, select: orderForReceipt });
   if (existing) return { ok: true, receipt: toReceipt(existing), duplicate: true };
 
-  // Buy 1 Take 1 hands out 2 pieces per order, and recipes are per piece.
-  const needed = ingredientsNeeded(piecesToDeduct(sale.lines, sale.lines.map((l) => ({ id: l.productId, pieces: l.pieces }))), recipes);
-
   try {
     const order = await db.$transaction(async (tx) => {
-      // The order first: a concurrent duplicate fails here, before any stock moves.
+      // The order first: a repeat of a saved sale fails here (unique clientRequestId), before any stock moves.
       const created = await tx.order.create({
         data: {
           clientRequestId: sale.clientRequestId,
@@ -75,8 +74,14 @@ export async function saveSale(sale: Sale, recipes: Record<string, RecipeLine[]>
           amountReceived: sale.amountReceived,
           lines: { create: sale.lines.map(({ pieces: _pieces, ...line }) => line) },
         },
-        select: { id: true },
+        select: { id: true, ...orderForReceipt },
       });
+
+      // Only the cart's recipes, read at the moment of sale. Recipes are per piece (B1T1 = 2 pieces).
+      const lines = await tx.recipeLine.findMany({ where: { productId: { in: sale.lines.map((l) => l.productId) } } });
+      const recipes: Record<string, RecipeLine[]> = {};
+      for (const { productId, ...line } of lines) (recipes[productId] ??= []).push(line);
+      const needed = ingredientsNeeded(piecesToDeduct(sale.lines, sale.lines.map((l) => ({ id: l.productId, pieces: l.pieces }))), recipes);
 
       for (const [itemId, amount] of [...needed].sort(([a], [b]) => a.localeCompare(b))) {
         const { count } = await tx.inventoryItem.updateMany({
@@ -99,7 +104,7 @@ export async function saveSale(sale: Sale, recipes: Record<string, RecipeLine[]>
         })),
       });
 
-      return tx.order.findUniqueOrThrow({ where: { id: created.id }, select: orderForReceipt });
+      return created;
       // A combo can touch a dozen ingredients, each a round trip, and may wait on another till's
       // row locks: allow more than Prisma's default 5 s before giving up (and undoing everything).
     }, { maxWait: 5_000, timeout: 15_000 });

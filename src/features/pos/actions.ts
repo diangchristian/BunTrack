@@ -4,7 +4,6 @@ import { refresh } from "next/cache";
 
 import { logActivity } from "@/features/activity/log";
 import { getCurrentUser } from "@/features/auth/queries";
-import { listRecipes } from "@/features/inventory/queries";
 import { getProducts } from "@/features/products/queries";
 import { formatCentavos, manilaDate } from "@/lib/format";
 import { saveSale } from "./checkout";
@@ -20,7 +19,7 @@ export async function completeOrder(input: unknown): Promise<{ ok: true; receipt
 
   // Priced from the database, never from the browser: a tampered request can't change prices.
   // Costed products (not getMenu) so each line's cost can be snapshotted on the order.
-  const [products, recipes] = await Promise.all([getProducts(), listRecipes()]);
+  const products = await getProducts();
   const priced = checkoutOrder(products.map(toMenuProduct), parsed.data);
   if (!priced.ok) return priced;
 
@@ -39,7 +38,6 @@ export async function completeOrder(input: unknown): Promise<{ ok: true; receipt
         return { productId: l.productId, name: l.name, categoryId: product.category, quantity: l.quantity, unitPrice: product.price, unitCost: product.cost, pieces: product.pieces };
       }),
     },
-    recipes,
   );
   if (!result.ok) return { ok: false, error: `Not enough ${result.shortOf} for this order. Remove some items and try again.` };
 
