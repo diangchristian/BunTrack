@@ -28,7 +28,8 @@ export async function login(_prev: LoginFormState, formData: FormData): Promise<
   const account = await db.user.findFirst({ where: id.by === "email" ? { email: id.email } : { username: id.username }, select: { id: true } });
   const key = account ? `user:${account.id}` : `${id.by}:${id.by === "email" ? id.email : id.username}`;
   const now = new Date();
-  await db.loginAttempt.deleteMany({ where: { key, lastFailure: { lt: new Date(now.getTime() - LOGIN_WINDOW_MS) } } });
+  // Every expired row, not just this one: names typed once (typos, made-up ones) would never be cleared.
+  await db.loginAttempt.deleteMany({ where: { lastFailure: { lt: new Date(now.getTime() - LOGIN_WINDOW_MS) } } });
   // Counted before the password is checked, in one atomic upsert, so parallel requests
   // can't all read "4 tries" and slip past the limit together.
   const tries = await db.loginAttempt.upsert({

@@ -27,7 +27,7 @@ export function toMenuProduct(product: CostedProduct): MenuProduct {
  * Prices an order from the server's menu. The browser only sends product ids and
  * quantities, so a tampered request can't change prices or sell sold-out items.
  */
-export function checkoutOrder(menu: MenuProduct[], input: Omit<CheckoutInput, "clientRequestId">): CheckoutResult {
+export function checkoutOrder(menu: MenuProduct[], input: Omit<CheckoutInput, "clientRequestId" | "expectedTotal">): CheckoutResult {
   const quantities = new Map<string, number>();
   for (const line of input.lines) {
     quantities.set(line.productId, (quantities.get(line.productId) ?? 0) + line.quantity);

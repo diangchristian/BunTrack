@@ -7,7 +7,7 @@ import { logActivity } from "@/features/activity/log";
 import { getCurrentUser } from "@/features/auth/queries";
 import { getProducts } from "@/features/products/queries";
 import { formatCentavos, manilaDate } from "@/lib/format";
-import { saveSale } from "./checkout";
+import { savedSale, saveSale } from "./checkout";
 import { checkoutSchema } from "./schemas";
 import { checkoutOrder, toMenuProduct } from "./service";
 import type { Receipt } from "./types";
@@ -18,11 +18,24 @@ export async function completeOrder(input: unknown): Promise<{ ok: true; receipt
   const parsed = checkoutSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "This order is invalid. Check the items and payment." };
 
+  // A double tap or a retry of a sale already saved gets its receipt back before any check that
+  // could now fail (a price changed, or that sale used up the last of something). Not logged twice.
+  const saved = await savedSale(parsed.data.clientRequestId);
+  if (saved) return { ok: true, receipt: saved };
+
   // Priced from the database, never from the browser: a tampered request can't change prices.
   // Costed products (not getMenu) so each line's cost can be snapshotted on the order.
   const products = await getProducts();
   const priced = checkoutOrder(products.map(toMenuProduct), parsed.data);
-  if (!priced.ok) return priced;
+  // Either way the till's menu is stale (prices, stock, availability), so re-render it.
+  if (!priced.ok) {
+    refresh();
+    return priced;
+  }
+  if (priced.order.total !== parsed.data.expectedTotal) {
+    refresh();
+    return { ok: false, error: `A price changed since this order was started. The total is now ${formatCentavos(priced.order.total)}: check it with the customer and try again.` };
+  }
 
   const now = new Date(); // one clock read, so the order's day and time always agree
   const result = await saveSale(

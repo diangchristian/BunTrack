@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCentavos } from "@/lib/format";
+import { randomUuid } from "@/lib/uuid";
 import { cn } from "@/lib/utils";
 import { completeOrder } from "../actions";
 import { changeDue, orderTotals, quickCashOptions } from "../pricing";
@@ -51,7 +52,7 @@ function PaymentForm({
 }) {
   // One id for this payment, sent with every attempt: a double tap or a retry can't save it twice.
   // PaymentForm mounts each time the dialog opens, so every payment gets a fresh one.
-  const [clientRequestId] = useState(() => crypto.randomUUID());
+  const [clientRequestId] = useState(randomUuid);
   const [method, setMethod] = useState<PaymentMethod>("cash");
   const [cashInput, setCashInput] = useState("");
   const [error, setError] = useState<string>();
@@ -70,6 +71,7 @@ function PaymentForm({
         clientRequestId,
         method,
         amountReceived: method === "cash" ? received : 0,
+        expectedTotal: total,
         lines: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity })),
       });
       if (result.ok) onPaid(result.receipt);

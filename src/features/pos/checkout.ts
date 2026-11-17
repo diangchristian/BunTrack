@@ -43,6 +43,12 @@ class OutOfStock extends Error {
 
 const orderForReceipt = { number: true, completedAt: true, method: true, amountReceived: true, lines: { select: { productId: true, name: true, quantity: true, unitPrice: true } } } as const;
 
+/** The receipt of a sale already saved under this id, or null. Asked first, so a retry never takes a new order number. */
+export async function savedSale(clientRequestId: string) {
+  const order = await db.order.findUnique({ where: { clientRequestId }, select: orderForReceipt });
+  return order && toReceipt(order);
+}
+
 /**
  * Saves a priced sale: the order with its line snapshots, the stock deduction for every recipe
  * ingredient, and one "sale" movement per ingredient. One transaction, so either all of it is
@@ -56,27 +62,8 @@ const orderForReceipt = { number: true, completedAt: true, method: true, amountR
  *   different order wait for each other instead of deadlocking.
  */
 export async function saveSale(sale: Sale): Promise<SaveResult> {
-  // A retry of a sale already saved: return it without touching the order sequence (a refused
-  // insert would still use up a number and leave a gap in the receipts).
-  const existing = await db.order.findUnique({ where: { clientRequestId: sale.clientRequestId }, select: orderForReceipt });
-  if (existing) return { ok: true, receipt: toReceipt(existing), duplicate: true };
-
   try {
     const order = await db.$transaction(async (tx) => {
-      // The order first: a repeat of a saved sale fails here (unique clientRequestId), before any stock moves.
-      const created = await tx.order.create({
-        data: {
-          clientRequestId: sale.clientRequestId,
-          completedAt: sale.completedAt,
-          date: asDate(sale.date),
-          cashierId: sale.cashierId,
-          method: sale.method,
-          amountReceived: sale.amountReceived,
-          lines: { create: sale.lines.map(({ pieces: _pieces, ...line }) => line) },
-        },
-        select: { id: true, ...orderForReceipt },
-      });
-
       // Only the cart's recipes, read at the moment of sale. Recipes are per piece (B1T1 = 2 pieces).
       const lines = await tx.recipeLine.findMany({ where: { productId: { in: sale.lines.map((l) => l.productId) } } });
       const recipes: Record<string, RecipeLine[]> = {};
@@ -97,6 +84,22 @@ export async function saveSale(sale: Sale): Promise<SaveResult> {
         const item = await tx.inventoryItem.findUnique({ where: { id: shortId }, select: { name: true } });
         throw new OutOfStock(item?.name ?? "a removed item");
       }
+      // The order after the stock: a short ingredient undoes the sale before it takes an order
+      // number (Postgres never hands a used number back). A repeat fails here on the unique
+      // clientRequestId, and its stock deduction is undone with it.
+      const created = await tx.order.create({
+        data: {
+          clientRequestId: sale.clientRequestId,
+          completedAt: sale.completedAt,
+          date: asDate(sale.date),
+          cashierId: sale.cashierId,
+          method: sale.method,
+          amountReceived: sale.amountReceived,
+          lines: { create: sale.lines.map(({ pieces: _pieces, ...line }) => line) },
+        },
+        select: { id: true, ...orderForReceipt },
+      });
+
       await tx.stockMovement.createMany({
         data: [...needed].map(([itemId, amount]) => ({
           itemId,
@@ -114,11 +117,12 @@ export async function saveSale(sale: Sale): Promise<SaveResult> {
     }, { maxWait: 5_000, timeout: 15_000 });
     return { ok: true, receipt: toReceipt(order), duplicate: false };
   } catch (error) {
-    if (error instanceof OutOfStock) return { ok: false, shortOf: error.itemName };
-    // The same sale arrived twice at the same moment: the other request saved it, so return that one.
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      const saved = await db.order.findUnique({ where: { clientRequestId: sale.clientRequestId }, select: orderForReceipt });
-      if (saved) return { ok: true, receipt: toReceipt(saved), duplicate: true };
+    // The same sale arrived twice at once and the other request saved it: here that shows up as a
+    // unique-id clash, or as "out of stock" when the other one took the last of something.
+    if (error instanceof OutOfStock || (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) {
+      const saved = await savedSale(sale.clientRequestId);
+      if (saved) return { ok: true, receipt: saved, duplicate: true };
+      if (error instanceof OutOfStock) return { ok: false, shortOf: error.itemName };
     }
     throw error;
   }
