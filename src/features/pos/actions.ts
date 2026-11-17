@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { after } from "next/server";
 
 import { logActivity } from "@/features/activity/log";
 import { getCurrentUser } from "@/features/auth/queries";
@@ -42,8 +43,9 @@ export async function completeOrder(input: unknown): Promise<{ ok: true; receipt
   if (!result.ok) return { ok: false, error: `Not enough ${result.shortOf} for this order. Remove some items and try again.` };
 
   // A repeat of a sale that's already saved gets its receipt back, but isn't logged twice.
+  // After the response, so the cashier isn't kept waiting on the log write.
   if (!result.duplicate) {
-    await logActivity({ module: "POS", action: "Completed order", record: `Order ${result.receipt.orderNumber}`, change: `${formatCentavos(result.receipt.total)} · ${parsed.data.method === "cash" ? "Cash" : "GCash"}` });
+    after(() => logActivity({ module: "POS", action: "Completed order", record: `Order ${result.receipt.orderNumber}`, change: `${formatCentavos(result.receipt.total)} · ${parsed.data.method === "cash" ? "Cash" : "GCash"}` }));
   }
   refresh(); // the POS re-renders with the new servings left
   return { ok: true, receipt: result.receipt };

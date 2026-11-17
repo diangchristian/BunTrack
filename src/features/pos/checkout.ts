@@ -83,15 +83,19 @@ export async function saveSale(sale: Sale): Promise<SaveResult> {
       for (const { productId, ...line } of lines) (recipes[productId] ??= []).push(line);
       const needed = ingredientsNeeded(piecesToDeduct(sale.lines, sale.lines.map((l) => ({ id: l.productId, pieces: l.pieces }))), recipes);
 
-      for (const [itemId, amount] of [...needed].sort(([a], [b]) => a.localeCompare(b))) {
-        const { count } = await tx.inventoryItem.updateMany({
-          where: { id: itemId, quantity: { gte: amount } },
-          data: { quantity: { decrement: amount } },
-        });
-        if (count === 0) {
-          const item = await tx.inventoryItem.findUnique({ where: { id: itemId }, select: { name: true } });
-          throw new OutOfStock(item?.name ?? "a removed item");
-        }
+      // Two round trips however many ingredients: lock the rows in id order, then deduct them all.
+      const ids = [...needed.keys()];
+      const amounts = [...needed.values()];
+      await tx.$queryRaw`SELECT 1 FROM "inventoryItem" WHERE "id" = ANY(${ids}::text[]) ORDER BY "id" FOR UPDATE`;
+      const deducted = await tx.$queryRaw<{ id: string }[]>`
+        UPDATE "inventoryItem" i SET "quantity" = i."quantity" - v.amount, "updatedAt" = now()
+        FROM unnest(${ids}::text[], ${amounts}::int[]) AS v(id, amount)
+        WHERE i."id" = v.id AND i."quantity" >= v.amount
+        RETURNING i."id"`;
+      if (deducted.length < ids.length) {
+        const shortId = ids.find((id) => !deducted.some((d) => d.id === id))!;
+        const item = await tx.inventoryItem.findUnique({ where: { id: shortId }, select: { name: true } });
+        throw new OutOfStock(item?.name ?? "a removed item");
       }
       await tx.stockMovement.createMany({
         data: [...needed].map(([itemId, amount]) => ({
@@ -105,8 +109,8 @@ export async function saveSale(sale: Sale): Promise<SaveResult> {
       });
 
       return created;
-      // A combo can touch a dozen ingredients, each a round trip, and may wait on another till's
-      // row locks: allow more than Prisma's default 5 s before giving up (and undoing everything).
+      // May wait on another till's row locks: allow more than Prisma's default 5 s before giving
+      // up (and undoing everything).
     }, { maxWait: 5_000, timeout: 15_000 });
     return { ok: true, receipt: toReceipt(order), duplicate: false };
   } catch (error) {
