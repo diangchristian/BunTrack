@@ -112,6 +112,10 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* Brand-orange scrollbars (page, tables, dialogs). Inherited, so html covers everything. */
+  html {
+    scrollbar-color: var(--primary) transparent;
+  }
   body {
     @apply bg-background text-foreground;
   }
