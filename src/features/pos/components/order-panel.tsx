@@ -39,7 +39,8 @@ export function OrderPanel({
         </div>
       </div>
 
-      <div className="min-h-40 flex-1 overflow-y-auto px-5">
+      {/* Not flex-1: Total and Charge follow the last item instead of the bottom of the screen. */}
+      <div className="min-h-40 overflow-y-auto px-5">
         {lines.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 py-10 text-center">
             <ShoppingBag className="size-8 text-muted-foreground" aria-hidden />

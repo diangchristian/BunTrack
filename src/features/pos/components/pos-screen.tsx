@@ -57,16 +57,18 @@ export function PosScreen({ menu, categories, cashierName, shop }: { menu: MenuP
   }
 
   return (
-    <div className="flex flex-1 flex-col lg:grid lg:h-[calc(100svh-4rem)] lg:grid-cols-[minmax(0,1fr)_400px]">
-      <div className="flex flex-col gap-4 p-4 md:p-6 lg:overflow-y-auto">
+    // From tablet width up, menu and order sit side by side. The page scrolls the menu; the order
+    // column is sticky at screen height so it stays put. Phones stack them (with the bar below).
+    <div className="flex flex-1 flex-col md:grid md:grid-cols-[minmax(0,1fr)_320px] lg:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="flex flex-col gap-4 p-4 md:p-6">
         <div>
           <h1 className="text-[22px] leading-[30px] font-bold">Point of Sale</h1>
           <p className="text-sm text-muted-foreground">Cashier: {cashierName}</p>
         </div>
         <ProductGrid menu={menu} categories={categories} quantities={quantities} onAdd={(id) => setQuantity(id, (quantities.get(id) ?? 0) + 1)} />
-        {/* Below lg the order panel sits under the whole menu, so keep the total and Charge in reach. */}
+        {/* On phones the order panel sits under the whole menu, so keep the total and Charge in reach. */}
         {lines.length > 0 && (
-          <div className="sticky bottom-0 z-20 -mx-4 mt-auto flex items-center gap-3 border-t bg-card px-4 py-3 shadow-[0_-2px_8px_rgb(31_26_23/0.06)] md:-mx-6 md:px-6 lg:hidden">
+          <div className="sticky bottom-0 z-20 -mx-4 mt-auto flex items-center gap-3 border-t bg-card px-4 py-3 shadow-[0_-2px_8px_rgb(31_26_23/0.06)] md:hidden">
             <a href="#current-order" className="min-w-0 flex-1 text-sm">
               <span className="block font-semibold">
                 {itemCount} {itemCount === 1 ? "item" : "items"}
@@ -80,7 +82,7 @@ export function PosScreen({ menu, categories, cashierName, shop }: { menu: MenuP
         )}
       </div>
 
-      <div className="flex min-h-0 flex-col border-t lg:border-t-0 lg:border-l">
+      <div className="flex min-h-0 flex-col border-t bg-card md:sticky md:top-16 md:h-[calc(100svh-4rem)] md:border-t-0 md:border-l">
         <OrderPanel
           lines={lines}
           onQuantityChange={setQuantity}
