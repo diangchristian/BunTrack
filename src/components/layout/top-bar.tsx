@@ -1,19 +1,7 @@
-import { Suspense } from "react";
-import { connection } from "next/server";
 import { CalendarDays } from "lucide-react";
 
+import { LiveClock } from "@/components/layout/live-clock";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-
-async function TodayDate() {
-  await connection(); // render at request time, not at build time
-  return new Intl.DateTimeFormat("en-PH", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "Asia/Manila",
-  }).format(new Date());
-}
 
 export function TopBar() {
   return (
@@ -21,9 +9,7 @@ export function TopBar() {
       <SidebarTrigger className="-ml-1" />
       <span className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium text-muted-foreground">
         <CalendarDays className="size-4" aria-hidden />
-        <Suspense fallback="Today">
-          <TodayDate />
-        </Suspense>
+        <LiveClock />
       </span>
     </header>
   );
