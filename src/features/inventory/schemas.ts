@@ -90,7 +90,16 @@ export function openingStockIn(unit: UnitId, packSize: number | undefined, quant
 /** Add item: describes the item only. Its cost comes from what you pay at Stock In. */
 export const itemFormSchema = z
   .object({
-    name: z.string().trim().min(1, { error: "Enter a name" }).max(60),
+    // One format for every item: spaces collapse (so duplicates can't hide) and plain words get a
+    // capital ("chocolate syrup" → "Chocolate Syrup"). Words with a number or a capital ("16oz",
+    // "GCash") and anything in brackets ("(16 oz)") stay as typed.
+    name: z
+      .string()
+      .trim()
+      .transform((s) =>
+        s.replace(/\s+/g, " ").replace(/\([^)]*\)|[^\s()]+/g, (w) => (w.startsWith("(") || /[\p{Lu}\d]/u.test(w) ? w : w[0].toUpperCase() + w.slice(1))),
+      )
+      .pipe(z.string().min(1, { error: "Enter a name" }).max(60)),
     category: z.enum(itemCategories, { error: "Pick a category" }),
     unit: z.enum(Object.keys(units) as [UnitId, ...UnitId[]], { error: "Pick how you measure it" }),
     // An unchecked checkbox is simply missing from the form data.

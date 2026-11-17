@@ -69,7 +69,7 @@ export async function getInventory() {
   const [items, recipes, products, rows] = await Promise.all([
     listInventoryItems(),
     listRecipes(),
-    db.product.findMany({ where: { archivedAt: null }, select: { id: true, name: true } }),
+    db.product.findMany({ where: { archivedAt: null }, select: { id: true, name: true, price: true } }),
     db.stockMovement.findMany({
       orderBy: { createdAt: "desc" },
       take: HISTORY_LIMIT,
@@ -98,5 +98,13 @@ export async function getInventory() {
     createdAt: m.createdAt.toISOString(),
   }));
 
-  return { items, movements, usedBy, recipes };
+  // A Dan Eric item's selling price is its product's price (one piece per sale), for "expected sale".
+  const sellsFor: Record<string, number> = {};
+  for (const product of products) {
+    const [line, ...more] = recipes[product.id] ?? [];
+    const item = line && !more.length && line.quantity === 1 && items.find((i) => i.id === line.itemId);
+    if (item && item.category === "Ice Cream (Dan Eric)") sellsFor[item.id] = product.price;
+  }
+
+  return { items, movements, usedBy, recipes, sellsFor };
 }

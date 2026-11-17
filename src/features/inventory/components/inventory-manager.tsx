@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Pencil, Plus, Search, SquarePen, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,16 +38,22 @@ const statusFilter = [
 
 const HISTORY_PAGE_SIZE = 50;
 
-type DialogState = { kind: "movement"; itemId?: string; type: Exclude<MovementType, "sale"> } | { kind: "add" } | null;
+type DialogState = { kind: "movement"; itemId?: string; type: Exclude<MovementType, "sale"> } | { kind: "add" } | { kind: "edit"; item: InventoryItem } | null;
 
 export function InventoryManager({
   items,
   movements,
   usedBy,
+  sellsFor,
+  isAdmin,
 }: {
   items: InventoryItem[];
   movements: StockMovement[];
   usedBy: Record<string, string[]>;
+  /** Dan Eric items: itemId → selling price per piece (centavos), for the expected sale. */
+  sellsFor: Record<string, number>;
+  /** The owner can fix an item's details; the server checks again. */
+  isAdmin: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
@@ -108,7 +114,7 @@ export function InventoryManager({
                   <TableHead className="hidden text-right text-xs lg:table-cell">Unit cost</TableHead>
                   <TableHead className="hidden text-right text-xs sm:table-cell">Stock value</TableHead>
                   <TableHead className="hidden text-xs sm:table-cell">Status</TableHead>
-                  <TableHead className="w-48 text-right text-xs">
+                  <TableHead className={cn("text-right text-xs", isAdmin ? "w-64" : "w-48")}>
                     <span className="sr-only">Actions</span>
                   </TableHead>
                 </TableRow>
@@ -147,6 +153,13 @@ export function InventoryManager({
                           {item.homemade && " · Made in-house"}
                           {item.packSize && ` · pack of ${formatQuantity(item.packSize, item.unit)}`}
                         </p>
+                        {sellsFor[item.id] !== undefined && (
+                          // Like the Inventory Tracker sheet: what the stock brings in at the selling price.
+                          <p className="text-xs text-muted-foreground">
+                            Sells for {formatCentavos(sellsFor[item.id])} · expected sale{" "}
+                            <span className="font-semibold text-foreground">{formatCentavos(item.quantity * sellsFor[item.id])}</span>
+                          </p>
+                        )}
                       </TableCell>
                       <TableCell>
                         <p className={cn("font-semibold tabular-nums", s === "out" ? "text-destructive" : s === "low" && "text-warning")}>
@@ -181,6 +194,11 @@ export function InventoryManager({
                           <Button variant="ghost" size="sm" onClick={() => setDialog({ kind: "movement", itemId: item.id, type: "adjustment" })}>
                             <Pencil data-icon="inline-start" /> Adjust
                           </Button>
+                          {isAdmin && (
+                            <Button variant="ghost" size="sm" onClick={() => setDialog({ kind: "edit", item })}>
+                              <SquarePen data-icon="inline-start" /> Edit
+                            </Button>
+                          )}
                         </span>
                       </TableCell>
                     </TableRow>
@@ -246,6 +264,7 @@ export function InventoryManager({
         <MovementDialog open initial={dialog} items={items} usedBy={usedBy} lastPlace={lastPlace} onClose={() => setDialog(null)} />
       )}
       {dialog?.kind === "add" && <AddItemDialog open onClose={() => setDialog(null)} />}
+      {dialog?.kind === "edit" && <AddItemDialog open item={dialog.item} onClose={() => setDialog(null)} />}
     </div>
   );
 }

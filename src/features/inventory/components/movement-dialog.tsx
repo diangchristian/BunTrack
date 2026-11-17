@@ -14,7 +14,8 @@ import { formatCentavos, manilaDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { recordStockMovement, type InventoryFormState } from "../actions";
 import { formatQuantity, perUnitLabel, stockStatus } from "../costing";
-import { previewStockIn } from "../schemas";
+import { parsePesos } from "@/features/products/schemas";
+import { previewStockIn, stockAmount } from "../schemas";
 import { units, type InventoryItem, type MovementType } from "../types";
 
 type FormType = Exclude<MovementType, "sale">;
@@ -83,9 +84,20 @@ function MovementForm({
   const packSize = type === "stock-in" && !batch ? item?.packSize : undefined;
   const perUnit = item ? perUnitLabel(item.unit) : "";
 
+  // Dan Eric sells at a fixed dealer's price per piece, so Stock In asks for that (prefilled
+  // with the current one) and works out the total, like the Purchase Tracker sheet.
+  const dealer = type === "stock-in" && item?.category === "Ice Cream (Dan Eric)";
+  const [dealerPriceInput, setDealerPrice] = useState<string>();
+  const dealerPrice = dealerPriceInput ?? (item?.unitCost ? (item.unitCost / 100).toFixed(2) : "");
+  const pieces = item ? stockAmount(quantity, item.unit) : null;
+  const pricePerPiece = parsePesos(dealerPrice);
+  const dealerTotal = dealer && pieces && pricePerPiece !== null ? pieces * pricePerPiece : null;
+  // The server still gets a total paid and works the cost back out: total ÷ pieces = the dealer's price.
+  const totalSent = dealer ? (dealerTotal !== null ? (dealerTotal / 100).toFixed(2) : "") : totalPaid;
+
   // Live preview of what saving will do, using the same rules the server checks with.
   // The new stock level shows as soon as the amount is typed; the cost once the total is too.
-  const preview = item ? previewStockIn(item.unit, packSize, quantity, type === "stock-in" ? totalPaid : "") : { amount: null, unitCost: undefined };
+  const preview = item ? previewStockIn(item.unit, packSize, quantity, type === "stock-in" ? totalSent : "") : { amount: null, unitCost: undefined };
   const amount = preview.amount;
   const after = item && amount !== null ? (type === "stock-in" ? item.quantity + amount : type === "adjustment" ? amount : item.quantity - amount) : null;
   const newCost = preview.unitCost;
@@ -127,7 +139,10 @@ function MovementForm({
           items={items.map((i) => ({ value: i.id, label: i.name }))}
           value={itemId}
           onValueChange={(v) => {
-            if (v) setItemId(v);
+            if (v) {
+              setItemId(v);
+              setDealerPrice(undefined); // show the new item's own dealer price
+            }
           }}
         >
           <SelectTrigger id="itemId" size="lg" className="w-full">
@@ -175,7 +190,20 @@ function MovementForm({
         >
           <Input id="quantity" name="quantity" inputMode="decimal" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder={packSize ? "3" : item?.unit === "pcs" ? "50" : "2.5"} required className="h-10 tabular-nums" />
         </Field>
-        {type === "stock-in" ? (
+        {dealer ? (
+          <Field label="Dealer's price per piece (₱)" htmlFor="dealerPrice" error={errors.totalPaid?.[0]}>
+            <Input
+              id="dealerPrice"
+              inputMode="decimal"
+              value={dealerPrice}
+              onChange={(e) => setDealerPrice(e.target.value)}
+              placeholder="e.g. 146.00"
+              required
+              className="h-10 tabular-nums"
+            />
+            <input type="hidden" name="totalPaid" value={totalSent} />
+          </Field>
+        ) : type === "stock-in" ? (
           <Field label={batch ? "Total cost of this batch (₱)" : "Total paid (₱)"} htmlFor="totalPaid" error={errors.totalPaid?.[0]}>
             <Input
               id="totalPaid"
@@ -212,7 +240,10 @@ function MovementForm({
         <div className={cn("flex flex-col gap-2 rounded-[14px] p-4 text-sm", after < 0 ? "bg-destructive-soft" : "bg-success-soft")} aria-live="polite">
           <Row label="New stock level" value={after < 0 ? "More than you have" : `${formatQuantity(item.quantity, item.unit)} → ${formatQuantity(after, item.unit)}`} />
           {after >= 0 && <Row label="Status after save" value={statusLabel[stockStatus({ quantity: after, minimum: item.minimum })]} />}
-          {newCost !== undefined && <Row label={`Cost per ${perUnit} (worked out)`} value={formatCentavos(newCost)} />}
+          {dealerTotal !== null && pricePerPiece !== null && (
+            <Row label="Total to pay" value={`${pieces} × ${formatCentavos(pricePerPiece)} = ${formatCentavos(dealerTotal)}`} />
+          )}
+          {newCost !== undefined && !dealer && <Row label={`Cost per ${perUnit} (worked out)`} value={formatCentavos(newCost)} />}
         </div>
       )}
 

@@ -53,3 +53,11 @@ test("a product photo must be a small PNG, JPG or WebP; empty removes it", () =>
   assert.equal(productFormSchema.safeParse({ ...valid, image: "javascript:alert(1)" }).success, false);
   assert.equal(productFormSchema.safeParse({ ...valid, image: `data:image/png;base64,${"A".repeat(800_000)}` }).success, false);
 });
+
+test("an ice cream's dealer's price is optional: blank leaves its cost as it is", () => {
+  const form = { name: "1 Liter", description: "", category: "iceCream", price: "187", available: "on", b1t1: null, image: "" };
+  assert.equal(productFormSchema.parse({ ...form, dealerPrice: "146" }).dealerPrice, 14600);
+  assert.equal(productFormSchema.parse({ ...form, dealerPrice: "" }).dealerPrice, undefined);
+  assert.equal(productFormSchema.parse(form).dealerPrice, undefined);
+  assert.deepEqual(productFormSchema.safeParse({ ...form, dealerPrice: "abc" }).error?.issues.map((i) => i.message), ["Enter the dealer's price like 149 or 149.50"]);
+});

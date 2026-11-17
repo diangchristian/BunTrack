@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { formText } from "@/lib/forms";
 import { logActivity } from "@/features/activity/log";
-import { canUseStore, getCurrentUser } from "@/features/auth/queries";
+import { canAdminister, canUseStore, getCurrentUser } from "@/features/auth/queries";
 import { toDbDate as asDate } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { formatQuantity } from "./costing";
@@ -17,6 +17,14 @@ import { units } from "./types";
 export type InventoryFormState = { ok?: boolean; error?: string; fieldErrors?: Record<string, string[] | undefined> };
 
 const CHANGED = "Someone just changed this item's stock. Check the amount and try again.";
+const NAME_TAKEN = "There's already an item called that.";
+
+/** Another active item with this name, ignoring capitals: one ingredient's stock would split across two rows. */
+const nameTaken = (name: string, exceptId?: string) =>
+  db.inventoryItem.findFirst({
+    where: { name: { equals: name, mode: "insensitive" }, archivedAt: null, ...(exceptId && { id: { not: exceptId } }) },
+    select: { id: true },
+  });
 
 /** The ledger row for a planned movement: one place that decides what a movement records. */
 function movementRow(itemId: string, input: MovementInput, plan: Extract<ReturnType<typeof planMovement>, { ok: true }>, recordedById: string) {
@@ -132,6 +140,7 @@ export async function addInventoryItem(_prev: InventoryFormState, formData: Form
     return { fieldErrors: { ...(parsed.success ? {} : z.flattenError(parsed.error).fieldErrors), ...openingErrors } };
   }
   const { minimum, packSize, homemade, ...values } = parsed.data;
+  if (await nameTaken(values.name)) return { fieldErrors: { name: [NAME_TAKEN] } };
   const user = await getCurrentUser();
 
   // What's on hand now is recorded as the first Stock In, by the same rules as any other.
@@ -163,6 +172,40 @@ export async function addInventoryItem(_prev: InventoryFormState, formData: Form
       change: `0 → ${formatQuantity(opening.quantity, values.unit)} · on hand when added`,
     });
   }
+  refresh();
+  return { ok: true };
+}
+
+/** Fix an item's details (a wrong category, a typo). Owner only. Stock and cost don't change here. */
+export async function updateInventoryItem(_prev: InventoryFormState, formData: FormData): Promise<InventoryFormState> {
+  if (!(await canAdminister())) return { error: "Only an administrator can edit items." };
+
+  const before = await db.inventoryItem.findFirst({ where: { id: formText(formData, "id"), archivedAt: null } });
+  if (!before) return { error: "This item no longer exists." };
+
+  // The unit stays as it is: quantities are stored in it (2500 = 2.5 kg), so changing it would
+  // turn 2.5 kg into 2,500 pieces.
+  const parsed = itemFormSchema.safeParse({
+    ...Object.fromEntries(["name", "category", "minimum", "packSize"].map((k) => [k, formText(formData, k)])),
+    unit: before.unit,
+    homemade: formData.get("homemade"),
+  });
+  if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
+
+  const { name, category, homemade } = parsed.data;
+  if (await nameTaken(name, before.id)) return { fieldErrors: { name: [NAME_TAKEN] } };
+  const minimum = Math.round(parsed.data.minimum * units[before.unit].factor);
+  const packSize = parsed.data.packSize ?? null;
+  await db.inventoryItem.update({ where: { id: before.id }, data: { name, category, homemade, minimum, packSize } });
+
+  const changes = [
+    before.name !== name && `Renamed from ${before.name}`,
+    before.category !== category && `Category ${before.category} → ${category}`,
+    before.minimum !== minimum && `Reorder level ${formatQuantity(before.minimum, before.unit)} → ${formatQuantity(minimum, before.unit)}`,
+    before.packSize !== packSize && (packSize ? `Pack of ${formatQuantity(packSize, before.unit)}` : "No longer bought by the pack"),
+    before.homemade !== homemade && (homemade ? "Now made in-house" : "No longer made in-house"),
+  ].filter(Boolean);
+  if (changes.length) await logActivity({ module: "Inventory", action: "Item edited", record: name, change: changes.join(" · ") });
   refresh();
   return { ok: true };
 }

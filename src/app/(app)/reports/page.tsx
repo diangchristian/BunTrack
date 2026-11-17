@@ -102,7 +102,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
       </div>
 
       <section className="rounded-xl border bg-card p-5 shadow-[0_2px_8px_rgb(31_26_23/0.06)]">
-        <ProductPerformance products={report.products} categories={categories} />
+        <ProductPerformance products={report.products} categories={categories} dealer={business === "iceCream"} />
       </section>
       <section className="rounded-xl border bg-card p-5 shadow-[0_2px_8px_rgb(31_26_23/0.06)]">
         <TransactionHistory key={`${period}-${business}`} transactions={report.transactions} />

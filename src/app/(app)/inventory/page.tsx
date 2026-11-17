@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AlertTriangle, Boxes, CircleCheck, Coins, XCircle } from "lucide-react";
 
 import { NoAccess } from "@/components/no-access";
-import { canUseStore } from "@/features/auth/queries";
+import { canAdminister, canUseStore } from "@/features/auth/queries";
 import { StatCard } from "@/components/stat-card";
 import { InventoryManager } from "@/features/inventory/components/inventory-manager";
 import { stockStatus, stockValue } from "@/features/inventory/costing";
@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Inventory" };
 export default async function InventoryPage() {
   if (!(await canUseStore())) return <NoAccess page="Inventory" />;
 
-  const { items, movements, usedBy } = await getInventory();
+  const [{ items, movements, usedBy, sellsFor }, isAdmin] = await Promise.all([getInventory(), canAdminister()]);
   const count = (s: ReturnType<typeof stockStatus>) => items.filter((i) => stockStatus(i) === s);
   const out = count("out");
   const totalValue = items.reduce((sum, i) => sum + stockValue(i), 0);
@@ -43,7 +43,7 @@ export default async function InventoryPage() {
         <StatCard label="Stock Value" value={formatPeso(Math.round(totalValue) / 100)} icon={Coins} delta={{ text: "At current unit cost", kind: "neutral" }} />
       </section>
 
-      <InventoryManager items={items} movements={movements} usedBy={usedBy} />
+      <InventoryManager items={items} movements={movements} usedBy={usedBy} sellsFor={sellsFor} isAdmin={isAdmin} />
     </div>
   );
 }

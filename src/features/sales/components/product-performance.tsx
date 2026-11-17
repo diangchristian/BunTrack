@@ -15,7 +15,11 @@ const sorts = [
   { id: "least", label: "Least-selling" },
 ] as const;
 
-export function ProductPerformance({ products, categories }: { products: SalesReport["products"]; categories: Category[] }) {
+/**
+ * `dealer` (the Ice Cream view) adds the Sales Tracker's columns: the dealer's price per piece and
+ * net sales (pieces × dealer's price). Both come from each sale's saved cost: net = revenue − profit.
+ */
+export function ProductPerformance({ products, categories, dealer = false }: { products: SalesReport["products"]; categories: Category[]; dealer?: boolean }) {
   const [sort, setSort] = useState<(typeof sorts)[number]["id"]>("best");
   const rows = [...products].sort((a, b) => (sort === "profit" ? b.profit - a.profit : sort === "least" ? a.units - b.units : b.units - a.units));
 
@@ -24,7 +28,11 @@ export function ProductPerformance({ products, categories }: { products: SalesRe
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-[15px] font-semibold">Product performance</h2>
-          <p className="text-xs text-muted-foreground">Profit uses each item&apos;s cost at the time it was sold</p>
+          <p className="text-xs text-muted-foreground">
+            {dealer
+              ? "Dealer's price and net sales use what each piece cost when it was sold"
+              : "Profit uses each item's cost at the time it was sold"}
+          </p>
         </div>
         <div className="flex gap-1 rounded-[10px] border bg-secondary p-1" role="group" aria-label="Sort products">
           {sorts.map((s) => (
@@ -51,7 +59,9 @@ export function ProductPerformance({ products, categories }: { products: SalesRe
                 <TableHead className="text-xs">Product</TableHead>
                 <TableHead className="hidden text-xs md:table-cell">Category</TableHead>
                 <TableHead className="text-right text-xs">Units sold</TableHead>
+                {dealer && <TableHead className="hidden text-right text-xs sm:table-cell">Dealer&apos;s price</TableHead>}
                 <TableHead className="text-right text-xs">Revenue</TableHead>
+                {dealer && <TableHead className="hidden text-right text-xs sm:table-cell">Net sales</TableHead>}
                 <TableHead className="hidden text-right text-xs sm:table-cell">Gross profit</TableHead>
                 <TableHead className="hidden text-right text-xs lg:table-cell">Margin</TableHead>
                 <TableHead className="hidden text-xs sm:table-cell">vs prev. period</TableHead>
@@ -65,7 +75,13 @@ export function ProductPerformance({ products, categories }: { products: SalesRe
                     <TableCell className="font-semibold">{p.name}</TableCell>
                     <TableCell className="hidden text-muted-foreground md:table-cell">{categoryLabel(p.category, categories)}</TableCell>
                     <TableCell className="text-right font-semibold tabular-nums">{p.units}</TableCell>
+                    {dealer && (
+                      <TableCell className="hidden text-right text-muted-foreground tabular-nums sm:table-cell">
+                        {p.units ? formatCentavos(Math.round((p.revenue - p.profit) / p.units)) : "—"}
+                      </TableCell>
+                    )}
                     <TableCell className="text-right tabular-nums">{formatCentavos(p.revenue)}</TableCell>
+                    {dealer && <TableCell className="hidden text-right tabular-nums sm:table-cell">{formatCentavos(p.revenue - p.profit)}</TableCell>}
                     <TableCell className="hidden text-right tabular-nums sm:table-cell">{formatCentavos(p.profit)}</TableCell>
                     <TableCell className="hidden text-right text-muted-foreground tabular-nums lg:table-cell">
                       {p.revenue ? `${((p.profit / p.revenue) * 100).toFixed(1)}%` : "—"}

@@ -26,6 +26,12 @@ export const productFormSchema = z
   // Checked against the current category list in the action (the list is editable in Settings).
   category: z.string().trim().min(1, { error: "Pick a category" }),
   price: priceSchema,
+  // Ice cream only: what Dan Eric charges per piece (the List sheet's "Net Price"). Blank = keep it.
+  dealerPrice: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() || undefined)
+    .pipe(pesos("the dealer's price").optional()),
   // An unchecked checkbox is simply missing from the form data.
   available: z.literal("on").nullish().transform((v) => v === "on"),
   b1t1: z.literal("on").nullish(),

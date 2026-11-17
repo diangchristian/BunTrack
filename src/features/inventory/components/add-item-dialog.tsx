@@ -11,10 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatCentavos } from "@/lib/format";
 import { keepValuesOnSubmit } from "@/lib/forms";
 import { cn } from "@/lib/utils";
-import { addInventoryItem, type InventoryFormState } from "../actions";
+import { addInventoryItem, updateInventoryItem, type InventoryFormState } from "../actions";
 import { formatQuantity, perUnitLabel } from "../costing";
 import { parsePackSize, previewStockIn } from "../schemas";
-import { itemCategories, units, type UnitId } from "../types";
+import { itemCategories, units, type InventoryItem, type UnitId } from "../types";
 import { Field } from "./movement-dialog";
 
 const categoryItems = itemCategories.map((c) => ({ value: c, label: c }));
@@ -24,29 +24,32 @@ const measures: { unit: UnitId; label: string; hint: string; icon: LucideIcon }[
   { unit: "L", label: "Liquid", hint: "liters · oil, sauce, syrup", icon: Droplet },
 ];
 
-export function AddItemDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+/** Add an item, or edit one when `item` is given (owner only: fixing a wrong category, a typo). */
+export function AddItemDialog({ open, item, onClose }: { open: boolean; item?: InventoryItem; onClose: () => void }) {
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-lg">
-        <AddItemForm onDone={onClose} />
+        <AddItemForm item={item} onDone={onClose} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function AddItemForm({ onDone }: { onDone: () => void }) {
+function AddItemForm({ item, onDone }: { item?: InventoryItem; onDone: () => void }) {
   const [state, formAction, saving] = useActionState(async (prev: InventoryFormState, formData: FormData) => {
-    const result = await addInventoryItem(prev, formData);
+    const result = await (item ? updateInventoryItem : addInventoryItem)(prev, formData);
     if (result.ok) {
-      toast.success(`Item added: ${formData.get("name")}`);
+      toast.success(item ? `Item updated: ${formData.get("name")}` : `Item added: ${formData.get("name")}`);
       onDone();
     }
     return result;
   }, {});
-  const [unit, setUnit] = useState<UnitId>("pcs");
-  const [homemade, setHomemade] = useState(false);
-  const [byPack, setByPack] = useState(false);
-  const [packSize, setPackSize] = useState("");
+  // When editing, amounts are shown in the big unit (3000 g → "3"), the way they're typed.
+  const inBigUnit = (small: number) => String(small / units[item?.unit ?? "pcs"].factor);
+  const [unit, setUnit] = useState<UnitId>(item?.unit ?? "pcs");
+  const [homemade, setHomemade] = useState(item?.homemade ?? false);
+  const [byPack, setByPack] = useState(!!item?.packSize);
+  const [packSize, setPackSize] = useState(item?.packSize ? inBigUnit(item.packSize) : "");
   const [openingQuantity, setOpeningQuantity] = useState("");
   const [openingTotal, setOpeningTotal] = useState("");
   const errors = state.fieldErrors ?? {};
@@ -61,16 +64,21 @@ function AddItemForm({ onDone }: { onDone: () => void }) {
   return (
     <form onSubmit={keepValuesOnSubmit(formAction)} className="flex flex-col gap-4">
       <DialogHeader>
-        <DialogTitle className="text-lg font-bold">Add item</DialogTitle>
-        <DialogDescription>Something you buy or make and use in your recipes. Its cost comes from what you pay at Stock In.</DialogDescription>
+        <DialogTitle className="text-lg font-bold">{item ? "Edit item" : "Add item"}</DialogTitle>
+        <DialogDescription>
+          {item
+            ? "Fix its details. Stock and cost don't change here: use Stock In or Adjust for those."
+            : "Something you buy or make and use in your recipes. Its cost comes from what you pay at Stock In."}
+        </DialogDescription>
       </DialogHeader>
+      {item && <input type="hidden" name="id" value={item.id} />}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Name" htmlFor="item-name" error={errors.name?.[0]}>
-          <Input id="item-name" name="name" maxLength={60} required placeholder="e.g. Hotdog" className="h-10" />
+          <Input id="item-name" name="name" defaultValue={item?.name} maxLength={60} required placeholder="e.g. Burger Buns, Cups (16 oz)" className="h-10" />
         </Field>
         <Field label="Category" htmlFor="item-category" error={errors.category?.[0]}>
-          <Select name="category" items={categoryItems} defaultValue="Meat">
+          <Select name="category" items={categoryItems} defaultValue={item?.category ?? "Meat"}>
             <SelectTrigger id="item-category" size="lg" className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -85,32 +93,40 @@ function AddItemForm({ onDone }: { onDone: () => void }) {
         </Field>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <span id="measure-label" className="text-sm font-semibold text-muted-foreground">
-          How do you measure it?
-        </span>
-        <input type="hidden" name="unit" value={unit} />
-        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="measure-label">
-          {measures.map((m) => (
-            <button
-              key={m.unit}
-              type="button"
-              role="radio"
-              aria-checked={unit === m.unit}
-              onClick={() => setUnit(m.unit)}
-              className={cn(
-                "flex flex-col items-start gap-1 rounded-[10px] border border-input p-3 text-left",
-                unit === m.unit && "border-2 border-primary bg-brand-soft",
-              )}
-            >
-              <span className="flex items-center gap-1.5 text-sm font-semibold">
-                <m.icon className="size-4" aria-hidden /> {m.label}
-              </span>
-              <span className="text-xs text-muted-foreground">{m.hint}</span>
-            </button>
-          ))}
+      {item ? (
+        // Stock is stored in this unit, so it can't change once the item exists.
+        <p className="text-sm text-muted-foreground">
+          Measured in <span className="font-semibold text-foreground">{units[item.unit].label}</span> (can&apos;t change: its stock is
+          counted that way)
+        </p>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          <span id="measure-label" className="text-sm font-semibold text-muted-foreground">
+            How do you measure it?
+          </span>
+          <input type="hidden" name="unit" value={unit} />
+          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="measure-label">
+            {measures.map((m) => (
+              <button
+                key={m.unit}
+                type="button"
+                role="radio"
+                aria-checked={unit === m.unit}
+                onClick={() => setUnit(m.unit)}
+                className={cn(
+                  "flex flex-col items-start gap-1 rounded-[10px] border border-input p-3 text-left",
+                  unit === m.unit && "border-2 border-primary bg-brand-soft",
+                )}
+              >
+                <span className="flex items-center gap-1.5 text-sm font-semibold">
+                  <m.icon className="size-4" aria-hidden /> {m.label}
+                </span>
+                <span className="text-xs text-muted-foreground">{m.hint}</span>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" name="homemade" checked={homemade} onChange={(e) => setHomemade(e.target.checked)} className="size-4 accent-primary" />
@@ -158,50 +174,52 @@ function AddItemForm({ onDone }: { onDone: () => void }) {
       )}
 
       <Field label={`Remind me to buy more below (${unitLabel})`} htmlFor="item-min" error={errors.minimum?.[0]}>
-        <Input id="item-min" name="minimum" inputMode="decimal" required placeholder={unit === "pcs" ? "10" : "2"} className="h-10 tabular-nums" />
+        <Input id="item-min" name="minimum" defaultValue={item ? inBigUnit(item.minimum) : undefined} inputMode="decimal" required placeholder={unit === "pcs" ? "10" : "2"} className="h-10 tabular-nums" />
       </Field>
 
-      <div className="flex flex-col gap-3 rounded-[10px] border border-dashed p-3">
-        <div>
-          <p className="text-sm font-semibold">On hand now (optional)</p>
-          <p className="text-xs text-muted-foreground">If you already have some, enter it here and skip a separate Stock In.</p>
+      {!item && (
+        <div className="flex flex-col gap-3 rounded-[10px] border border-dashed p-3">
+          <div>
+            <p className="text-sm font-semibold">On hand now (optional)</p>
+            <p className="text-xs text-muted-foreground">If you already have some, enter it here and skip a separate Stock In.</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field
+              label={homemade ? `How many made (${unitLabel})` : usesPack ? `How many packs? (1 pack = ${packSize || "…"} ${unitLabel})` : `How much (${unitLabel})`}
+              htmlFor="opening-quantity"
+              error={errors.openingQuantity?.[0]}
+            >
+              <Input
+                id="opening-quantity"
+                name="openingQuantity"
+                inputMode="decimal"
+                value={openingQuantity}
+                onChange={(e) => setOpeningQuantity(e.target.value)}
+                placeholder={usesPack ? "3" : unit === "pcs" ? "30" : "2.5"}
+                className="h-10 tabular-nums"
+              />
+            </Field>
+            <Field label={homemade ? "Total cost to make (₱)" : "Total paid (₱)"} htmlFor="opening-total" error={errors.openingTotal?.[0]}>
+              <Input
+                id="opening-total"
+                name="openingTotal"
+                inputMode="decimal"
+                value={openingTotal}
+                onChange={(e) => setOpeningTotal(e.target.value)}
+                placeholder="450.00"
+                required={!!openingQuantity}
+                className="h-10 tabular-nums"
+              />
+            </Field>
+          </div>
+          {opening.amount !== null && opening.amount > 0 && (
+            <p className="rounded-md bg-success-soft px-3 py-2 text-sm text-success-strong" aria-live="polite">
+              = {formatQuantity(opening.amount, unit)} on hand
+              {opening.unitCost !== undefined && ` · ${formatCentavos(opening.unitCost)} per ${perUnit}`}
+            </p>
+          )}
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field
-            label={homemade ? `How many made (${unitLabel})` : usesPack ? `How many packs? (1 pack = ${packSize || "…"} ${unitLabel})` : `How much (${unitLabel})`}
-            htmlFor="opening-quantity"
-            error={errors.openingQuantity?.[0]}
-          >
-            <Input
-              id="opening-quantity"
-              name="openingQuantity"
-              inputMode="decimal"
-              value={openingQuantity}
-              onChange={(e) => setOpeningQuantity(e.target.value)}
-              placeholder={usesPack ? "3" : unit === "pcs" ? "30" : "2.5"}
-              className="h-10 tabular-nums"
-            />
-          </Field>
-          <Field label={homemade ? "Total cost to make (₱)" : "Total paid (₱)"} htmlFor="opening-total" error={errors.openingTotal?.[0]}>
-            <Input
-              id="opening-total"
-              name="openingTotal"
-              inputMode="decimal"
-              value={openingTotal}
-              onChange={(e) => setOpeningTotal(e.target.value)}
-              placeholder="450.00"
-              required={!!openingQuantity}
-              className="h-10 tabular-nums"
-            />
-          </Field>
-        </div>
-        {opening.amount !== null && opening.amount > 0 && (
-          <p className="rounded-md bg-success-soft px-3 py-2 text-sm text-success-strong" aria-live="polite">
-            = {formatQuantity(opening.amount, unit)} on hand
-            {opening.unitCost !== undefined && ` · ${formatCentavos(opening.unitCost)} per ${perUnit}`}
-          </p>
-        )}
-      </div>
+      )}
 
       {state.error && (
         <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive">
@@ -214,7 +232,7 @@ function AddItemForm({ onDone }: { onDone: () => void }) {
           Cancel
         </Button>
         <Button type="submit" className="h-10 font-semibold" disabled={saving}>
-          <Check data-icon="inline-start" /> {saving ? "Adding…" : "Add item"}
+          <Check data-icon="inline-start" /> {saving ? "Saving…" : item ? "Save changes" : "Add item"}
         </Button>
       </DialogFooter>
     </form>

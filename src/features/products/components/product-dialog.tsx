@@ -68,6 +68,8 @@ function ProductForm({ product, categories, onDone }: { product: CostedProduct |
     return result;
   }, {});
   const [price, setPrice] = useState(product ? centavosToInput(product.price) : "");
+  // Ice cream: Dan Eric's price per piece, prefilled from its stock item once it has one.
+  const [dealerPrice, setDealerPrice] = useState(product?.category === ICE_CREAM && product.cost ? centavosToInput(product.cost) : "");
   const [category, setCategory] = useState<CategoryId>(product?.category ?? categories[0]?.id ?? "");
   const [photo, setPhoto] = useState(product?.image ?? "");
   const [photoError, setPhotoError] = useState<string>();
@@ -77,8 +79,8 @@ function ProductForm({ product, categories, onDone }: { product: CostedProduct |
 
   const resold = category === ICE_CREAM; // Dan Eric ice cream: bought ready-made
   const priceC = parsePesos(price);
-  // Cost comes from the recipe and Inventory unit costs, so it's read-only here.
-  const costC = product?.hasRecipe ? product.cost : null;
+  // Ice cream costs what Dan Eric charges (typed here); anything else comes from its recipe.
+  const costC = resold ? parsePesos(dealerPrice) : product?.hasRecipe ? product.cost : null;
   const margin = priceC && costC !== null ? productMargin(priceC, costC) : null;
   const errors = state.fieldErrors ?? {};
   const busy = saving || archiving;
@@ -192,6 +194,20 @@ function ProductForm({ product, categories, onDone }: { product: CostedProduct |
                 className="h-10 tabular-nums"
               />
             </Field>
+            {resold && (
+              <Field label="Dealer's price (₱)" htmlFor="dealerPrice" error={errors.dealerPrice?.[0]}>
+                <Input
+                  id="dealerPrice"
+                  name="dealerPrice"
+                  inputMode="decimal"
+                  value={dealerPrice}
+                  onChange={(e) => setDealerPrice(e.target.value)}
+                  placeholder="What Dan Eric charges, e.g. 146.00"
+                  aria-invalid={!!errors.dealerPrice}
+                  className="h-10 tabular-nums"
+                />
+              </Field>
+            )}
           </div>
         </div>
       </div>
@@ -228,7 +244,7 @@ function ProductForm({ product, categories, onDone }: { product: CostedProduct |
             </Link>
           )}
         </div>
-        {!product?.hasRecipe && (
+        {!product?.hasRecipe && !resold && (
           <p className="text-xs text-muted-foreground">
             {product ? "No recipe yet. Add one in Costing & Pricing to see the cost." : "Save first, then add the recipe in Costing & Pricing."}
           </p>

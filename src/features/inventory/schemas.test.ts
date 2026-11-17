@@ -90,3 +90,18 @@ test("pack size and stock amounts follow one set of rules (also used by the live
   assert.equal(stockAmount("2.5", "kg"), 2500);
   assert.equal(stockAmount("1.5", "pcs", 10), null); // whole packs only
 });
+
+test("an item's name is trimmed and repeated spaces collapse, so the duplicate check can't be dodged", () => {
+  const base = { name: "  Burger   Buns ", category: "Bakery", unit: "pcs", minimum: "10", homemade: null };
+  assert.equal(itemFormSchema.parse(base).name, "Burger Buns");
+});
+
+test("item names are saved in Title Case, leaving sizes, numbers and brand capitals as typed", () => {
+  const name = (typed: string) => itemFormSchema.parse({ name: typed, category: "Pantry", unit: "pcs", minimum: "1", homemade: null }).name;
+  assert.equal(name("chocolate syrup"), "Chocolate Syrup");
+  assert.equal(name("double takeout plastic bag"), "Double Takeout Plastic Bag");
+  assert.equal(name("16oz dome cup"), "16oz Dome Cup");
+  assert.equal(name("dome cups (16 oz)"), "Dome Cups (16 oz)");
+  assert.equal(name("nestlé all-purpose cream"), "Nestlé All-purpose Cream");
+  assert.equal(name("GCash fee"), "GCash Fee");
+});
