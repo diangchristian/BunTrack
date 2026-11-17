@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { connection } from "next/server";
 import { Check, Minus, ShieldCheck, Users } from "lucide-react";
 
@@ -8,13 +9,24 @@ import { UsersManager } from "@/features/users/components/users-manager";
 import { listUsers } from "@/features/users/queries";
 import { permissions, roles } from "@/features/users/types";
 import { cn } from "@/lib/utils";
+import Loading from "../loading";
 
 export const metadata: Metadata = { title: "Users & Roles" };
 
 const roleIcon = { Administrator: ShieldCheck, "Family member": Users };
 const roleTone = { Administrator: "bg-brand-soft text-brand-strong", "Family member": "bg-success-soft text-success-strong" };
 
-export default async function UsersPage() {
+// The whole page streams under its own Suspense: on a move between pages only the page
+// re-renders, so (app)/loading.tsx sits too high to cover its reads.
+export default function UsersPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <UsersContent />
+    </Suspense>
+  );
+}
+
+async function UsersContent() {
   if (!(await canAdminister())) return <NoAccess page="Users & Roles" />;
 
   await connection();

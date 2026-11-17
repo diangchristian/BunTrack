@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Coins, Package, Receipt, ShoppingCart, TrendingUp } from "lucide-react";
 
 import { NoAccess } from "@/components/no-access";
@@ -15,12 +16,23 @@ import { getSalesReport, parseReportParams } from "@/features/sales/queries";
 import { businesses, periods } from "@/features/sales/types";
 import { formatCentavos, formatPeso, formatShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import Loading from "../loading";
 
 export const metadata: Metadata = { title: "Sales & Reports" };
 
 const shortDate = formatShortDate;
 
-export default async function ReportsPage({ searchParams }: PageProps<"/reports">) {
+// The whole page streams under its own Suspense: on a move between pages only the page
+// re-renders, so (app)/loading.tsx sits too high to cover its reads.
+export default function ReportsPage(props: PageProps<"/reports">) {
+  return (
+    <Suspense fallback={<Loading />}>
+      <ReportsContent {...props} />
+    </Suspense>
+  );
+}
+
+async function ReportsContent({ searchParams }: PageProps<"/reports">) {
   if (!(await canUseStore())) return <NoAccess page="Sales & Reports" />;
 
   const { period, business } = parseReportParams(await searchParams);

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { AlertTriangle, CircleCheck, Package, TrendingUp } from "lucide-react";
 
 import { NoAccess } from "@/components/no-access";
@@ -9,10 +10,21 @@ import { productMargin } from "@/features/products/costing";
 import { getProducts } from "@/features/products/queries";
 import { isOnSale } from "@/features/products/types";
 import { listCategories } from "@/features/categories/queries";
+import Loading from "../loading";
 
 export const metadata: Metadata = { title: "Products" };
 
-export default async function ProductsPage() {
+// The whole page streams under its own Suspense: on a move between pages only the page
+// re-renders, so (app)/loading.tsx sits too high to cover its reads.
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <ProductsContent />
+    </Suspense>
+  );
+}
+
+async function ProductsContent() {
   if (!(await canUseStore())) return <NoAccess page="Products" />;
 
   const [products, categories] = await Promise.all([getProducts(), listCategories()]);

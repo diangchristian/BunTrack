@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { CalendarDays, Coins, Receipt, Tags, TrendingDown, TrendingUp } from "lucide-react";
 
 import { NoAccess } from "@/components/no-access";
@@ -11,6 +12,7 @@ import { parseReportParams } from "@/features/sales/queries";
 import { businesses, periods } from "@/features/sales/types";
 import { formatCentavos, formatShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import Loading from "../loading";
 
 export const metadata: Metadata = { title: "Expenses" };
 
@@ -18,7 +20,17 @@ const shortDate = formatShortDate;
 // Centavos everywhere, so the net profit formula adds up exactly and matches the table.
 const peso = formatCentavos;
 
-export default async function ExpensesPage({ searchParams }: PageProps<"/expenses">) {
+// The whole page streams under its own Suspense: on a move between pages only the page
+// re-renders, so (app)/loading.tsx sits too high to cover its reads.
+export default function ExpensesPage(props: PageProps<"/expenses">) {
+  return (
+    <Suspense fallback={<Loading />}>
+      <ExpensesContent {...props} />
+    </Suspense>
+  );
+}
+
+async function ExpensesContent({ searchParams }: PageProps<"/expenses">) {
   if (!(await canUseStore())) return <NoAccess page="Expenses" />;
 
   const { period, business } = parseReportParams(await searchParams);

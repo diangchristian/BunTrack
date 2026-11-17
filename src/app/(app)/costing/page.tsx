@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { NoAccess } from "@/components/no-access";
 import { canUseStore } from "@/features/auth/queries";
@@ -6,10 +7,21 @@ import { listCategories } from "@/features/categories/queries";
 import { CostingWorkbench } from "@/features/inventory/components/costing-workbench";
 import { getInventory } from "@/features/inventory/queries";
 import { getProducts } from "@/features/products/queries";
+import Loading from "../loading";
 
 export const metadata: Metadata = { title: "Costing & Pricing" };
 
-export default async function CostingPage({ searchParams }: PageProps<"/costing">) {
+// The whole page streams under its own Suspense: on a move between pages only the page
+// re-renders, so (app)/loading.tsx sits too high to cover its reads.
+export default function CostingPage(props: PageProps<"/costing">) {
+  return (
+    <Suspense fallback={<Loading />}>
+      <CostingContent {...props} />
+    </Suspense>
+  );
+}
+
+async function CostingContent({ searchParams }: PageProps<"/costing">) {
   if (!(await canUseStore())) return <NoAccess page="Costing & Pricing" />;
 
   const [{ product }, products, { items, recipes }, categories] = await Promise.all([searchParams, getProducts(), getInventory(), listCategories()]);

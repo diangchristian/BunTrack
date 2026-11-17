@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { connection } from "next/server";
 
 import { NoAccess } from "@/components/no-access";
@@ -7,10 +8,21 @@ import { CategoryManager } from "@/features/categories/components/category-manag
 import { listCategories, productCountsByCategory } from "@/features/categories/queries";
 import { SettingsForm } from "@/features/settings/components/settings-form";
 import { getSettings } from "@/features/settings/queries";
+import Loading from "../loading";
 
 export const metadata: Metadata = { title: "Settings" };
 
-export default async function SettingsPage() {
+// The whole page streams under its own Suspense: on a move between pages only the page
+// re-renders, so (app)/loading.tsx sits too high to cover its reads.
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <SettingsContent />
+    </Suspense>
+  );
+}
+
+async function SettingsContent() {
   if (!(await canAdminister())) return <NoAccess page="Settings" />;
 
   await connection();

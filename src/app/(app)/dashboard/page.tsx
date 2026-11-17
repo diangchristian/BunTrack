@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { AlertTriangle, Coins, Receipt, ShoppingCart, TrendingUp, Wallet } from "lucide-react";
 
@@ -21,10 +22,21 @@ import { getDashboardData } from "@/features/dashboard/queries";
 import { getSettings } from "@/features/settings/queries";
 import { formatPeso } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import Loading from "../loading";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
-export default async function DashboardPage() {
+// The whole page streams under its own Suspense: on a move between pages only the page
+// re-renders, so (app)/loading.tsx sits too high to cover its reads.
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+async function DashboardContent() {
   if (!(await canUseStore())) return <NoAccess page="The dashboard" />;
 
   const [user, data, shop] = await Promise.all([getCurrentUser(), getDashboardData(), getSettings()]);
