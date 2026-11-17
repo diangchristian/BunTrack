@@ -128,8 +128,8 @@ function ExpenseForm({ expense, onDone }: { expense: Expense | null; onDone: () 
         </p>
       )}
 
-      <DialogFooter className="grid grid-cols-2 gap-2">
-        <Button type="button" variant="outline" className="h-10" onClick={onDone} disabled={saving}>
+      <DialogFooter className="grid grid-cols-[auto_1fr] gap-2">
+        <Button type="button" variant="outline" className="h-10 px-5" onClick={onDone} disabled={saving}>
           Cancel
         </Button>
         <Button type="submit" className="h-10 font-semibold" disabled={saving}>
