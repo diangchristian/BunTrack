@@ -1,0 +1,26 @@
+# Checks every push and pull request. Deploying is Vercel's job (it builds each push itself).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch cancels the run still going for the old one.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci # postinstall generates the Prisma client; no database needed
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm test
