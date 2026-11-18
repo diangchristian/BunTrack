@@ -10,7 +10,7 @@ type TooltipRow = { label: string; value: string; color?: string };
 
 function TooltipCard({ title, rows }: { title: string; rows: TooltipRow[] }) {
   return (
-    <div className="grid min-w-36 gap-1 rounded-md border bg-background px-3 py-2 text-xs shadow-lg">
+    <div className="grid min-w-36 gap-1 rounded-md border bg-background px-3 py-2 text-xs whitespace-nowrap shadow-lg">
       <p className="text-muted-foreground">{title}</p>
       {rows.map((row) => (
         <p key={row.label} className="flex items-center justify-between gap-4">
@@ -82,6 +82,8 @@ export function CategoryDonut({ data }: { data: DashboardData["salesByCategory"]
         <ChartContainer config={{}} className="aspect-square size-36">
           <PieChart accessibilityLayer>
             <ChartTooltip
+              // Above the "₱4.6k this week" label, which is painted after the chart.
+              wrapperStyle={{ zIndex: 10 }}
               content={({ active, payload }) => {
                 const row = payload?.[0]?.payload as (typeof rows)[number] | undefined;
                 if (!active || !row) return null;
