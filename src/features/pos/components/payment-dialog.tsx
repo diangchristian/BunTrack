@@ -133,7 +133,6 @@ function PaymentForm({
               onChange={(e) => setCashInput(e.target.value)}
               placeholder="0.00"
               className="h-11 px-3 text-base tabular-nums"
-              autoFocus
             />
             <div className="flex flex-wrap gap-2">
               {quickCashOptions(total).map((amount, i) => (
