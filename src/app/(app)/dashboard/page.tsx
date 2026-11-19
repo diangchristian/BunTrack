@@ -22,7 +22,7 @@ import { getDashboardData } from "@/features/dashboard/queries";
 import { getSettings } from "@/features/settings/queries";
 import { formatPeso } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import Loading from "../loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -30,7 +30,7 @@ export const metadata: Metadata = { title: "Dashboard" };
 // re-renders, so (app)/loading.tsx sits too high to cover its reads.
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback={<PageSkeleton stats={6} body="split" />}>
       <DashboardContent />
     </Suspense>
   );

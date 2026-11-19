@@ -17,7 +17,8 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       <Suspense fallback={<AppSidebar user={{ name: "…", role: "" }} />}>
         <SidebarWithUser />
       </Suspense>
-      <SidebarInset>
+      {/* min-w-0: a wide table scrolls inside its card instead of pushing the page past the screen. */}
+      <SidebarInset className="min-w-0">
         <TopBar />
         {children}
       </SidebarInset>

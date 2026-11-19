@@ -7,7 +7,7 @@ import { listCategories } from "@/features/categories/queries";
 import { CostingWorkbench } from "@/features/inventory/components/costing-workbench";
 import { getInventory } from "@/features/inventory/queries";
 import { getProducts } from "@/features/products/queries";
-import Loading from "../loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 
 export const metadata: Metadata = { title: "Costing & Pricing" };
 
@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Costing & Pricing" };
 // re-renders, so (app)/loading.tsx sits too high to cover its reads.
 export default function CostingPage(props: PageProps<"/costing">) {
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback={<PageSkeleton body="split" />}>
       <CostingContent {...props} />
     </Suspense>
   );

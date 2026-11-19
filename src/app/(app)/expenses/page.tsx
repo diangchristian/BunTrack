@@ -12,7 +12,7 @@ import { parseReportParams } from "@/features/sales/queries";
 import { businesses, periods } from "@/features/sales/types";
 import { formatCentavos, formatShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import Loading from "../loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 
 export const metadata: Metadata = { title: "Expenses" };
 
@@ -24,7 +24,7 @@ const peso = formatCentavos;
 // re-renders, so (app)/loading.tsx sits too high to cover its reads.
 export default function ExpensesPage(props: PageProps<"/expenses">) {
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback={<PageSkeleton filters stats={4} body="table" />}>
       <ExpensesContent {...props} />
     </Suspense>
   );
