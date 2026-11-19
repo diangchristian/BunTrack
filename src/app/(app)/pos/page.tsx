@@ -6,7 +6,7 @@ import { listCategories } from "@/features/categories/queries";
 import { PosScreen } from "@/features/pos/components/pos-screen";
 import { getMenu } from "@/features/pos/queries";
 import { getSettings } from "@/features/settings/queries";
-import Loading from "../loading";
+import { PosSkeleton } from "@/components/page-skeleton";
 
 export const metadata: Metadata = { title: "Point of Sale" };
 
@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Point of Sale" };
 // re-renders, so (app)/loading.tsx sits too high to cover its reads.
 export default function PosPage() {
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback={<PosSkeleton />}>
       <PosContent />
     </Suspense>
   );

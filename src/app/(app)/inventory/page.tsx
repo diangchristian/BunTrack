@@ -5,7 +5,7 @@ import { AlertTriangle, Boxes, CircleCheck, Coins, XCircle } from "lucide-react"
 import { NoAccess } from "@/components/no-access";
 import { canAdminister, canUseStore } from "@/features/auth/queries";
 import { StatCard } from "@/components/stat-card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ContentSkeleton } from "@/components/page-skeleton";
 import { InventoryManager } from "@/features/inventory/components/inventory-manager";
 import { stockStatus, stockValue } from "@/features/inventory/costing";
 import { getInventory } from "@/features/inventory/queries";
@@ -24,7 +24,7 @@ export default function InventoryPage() {
           Ingredients and Dan Eric ice cream stock. Completed POS orders deduct their recipe automatically.
         </p>
       </div>
-      <Suspense fallback={<Skeleton className="h-96 rounded-xl" />}>
+      <Suspense fallback={<ContentSkeleton stats={5} body="table" />}>
         <InventoryContent />
       </Suspense>
     </div>

@@ -10,7 +10,7 @@ import { productMargin } from "@/features/products/costing";
 import { getProducts } from "@/features/products/queries";
 import { isOnSale } from "@/features/products/types";
 import { listCategories } from "@/features/categories/queries";
-import Loading from "../loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 
 export const metadata: Metadata = { title: "Products" };
 
@@ -18,7 +18,7 @@ export const metadata: Metadata = { title: "Products" };
 // re-renders, so (app)/loading.tsx sits too high to cover its reads.
 export default function ProductsPage() {
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback={<PageSkeleton stats={4} body="table" />}>
       <ProductsContent />
     </Suspense>
   );

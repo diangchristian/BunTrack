@@ -8,7 +8,7 @@ import { CategoryManager } from "@/features/categories/components/category-manag
 import { listCategories, productCountsByCategory } from "@/features/categories/queries";
 import { SettingsForm } from "@/features/settings/components/settings-form";
 import { getSettings } from "@/features/settings/queries";
-import Loading from "../loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Settings" };
 // re-renders, so (app)/loading.tsx sits too high to cover its reads.
 export default function SettingsPage() {
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback={<PageSkeleton body="split" />}>
       <SettingsContent />
     </Suspense>
   );

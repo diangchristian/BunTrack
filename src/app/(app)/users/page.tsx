@@ -9,7 +9,7 @@ import { UsersManager } from "@/features/users/components/users-manager";
 import { listUsers } from "@/features/users/queries";
 import { permissions, roles } from "@/features/users/types";
 import { cn } from "@/lib/utils";
-import Loading from "../loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 
 export const metadata: Metadata = { title: "Users & Roles" };
 
@@ -20,7 +20,7 @@ const roleTone = { Administrator: "bg-brand-soft text-brand-strong", "Family mem
 // re-renders, so (app)/loading.tsx sits too high to cover its reads.
 export default function UsersPage() {
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback={<PageSkeleton stats={2} body="split" />}>
       <UsersContent />
     </Suspense>
   );

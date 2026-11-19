@@ -16,7 +16,7 @@ import { getSalesReport, parseReportParams } from "@/features/sales/queries";
 import { businesses, periods } from "@/features/sales/types";
 import { formatCentavos, formatPeso, formatShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import Loading from "../loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 
 export const metadata: Metadata = { title: "Sales & Reports" };
 
@@ -26,7 +26,7 @@ const shortDate = formatShortDate;
 // re-renders, so (app)/loading.tsx sits too high to cover its reads.
 export default function ReportsPage(props: PageProps<"/reports">) {
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback={<PageSkeleton filters stats={5} body="split" />}>
       <ReportsContent {...props} />
     </Suspense>
   );

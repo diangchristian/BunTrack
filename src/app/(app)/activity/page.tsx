@@ -5,7 +5,7 @@ import { NoAccess } from "@/components/no-access";
 import { canAdminister } from "@/features/auth/queries";
 import { ActivityLog } from "@/features/activity/components/activity-log";
 import { listActivity } from "@/features/activity/queries";
-import Loading from "../loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 
 export const metadata: Metadata = { title: "Activity Logs" };
 
@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Activity Logs" };
 // re-renders, so (app)/loading.tsx sits too high to cover its reads.
 export default function ActivityPage() {
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback={<PageSkeleton body="table" />}>
       <ActivityContent />
     </Suspense>
   );
