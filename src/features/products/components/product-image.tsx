@@ -28,12 +28,13 @@ export function ProductImage({
     <div
       className={cn(
         "relative flex shrink-0 items-center justify-center overflow-hidden rounded-[10px]",
-        product.available ? "bg-brand-soft text-primary" : "bg-neutral-soft text-muted-foreground",
+        // Photos sit on white (most have a white background); the icon placeholder keeps the tint.
+        product.image ? "bg-white" : product.available ? "bg-brand-soft text-primary" : "bg-neutral-soft text-muted-foreground",
         className,
       )}
     >
       {product.image ? (
-        <Image src={product.image} alt={product.name} fill sizes={sizes} className="object-cover" unoptimized={product.image.startsWith("data:")} />
+        <Image src={product.image} alt={product.name} fill sizes={sizes} className="object-contain" unoptimized={product.image.startsWith("data:")} />
       ) : (
         <Icon className="size-[45%]" aria-hidden />
       )}
